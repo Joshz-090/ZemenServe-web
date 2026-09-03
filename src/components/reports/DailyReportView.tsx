@@ -100,7 +100,7 @@ export function DailyReportView({ userRole }: DailyReportViewProps) {
             <h1 className="text-xl font-black text-slate-100 flex items-center gap-2">
               DAILY MANAGER FINANCIAL REPORT
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                LAN QuestPDF Standard
+                LAN Standard PDF Report
               </span>
             </h1>
             <p className="text-xs text-slate-400">Date: {summary.date}</p>
