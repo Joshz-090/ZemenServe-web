@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import { connectToDatabase } from '@/lib/db';
 import { UserModel } from '@/lib/models/User';
 
+export const dynamic = 'force-dynamic';
+
 // GET all users & pending password reset requests
 export async function GET() {
   try {

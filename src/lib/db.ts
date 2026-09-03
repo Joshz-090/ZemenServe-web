@@ -1,10 +1,6 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI as string;
-
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable inside .env.local or production host settings');
-}
+const DEFAULT_MONGODB_URI = 'mongodb://127.0.0.1:27017/hotel_management';
 
 /**
  * Global is used here to maintain a cached connection across hot reloads in development.
@@ -27,6 +23,8 @@ if (!cached) {
 }
 
 export async function connectToDatabase(): Promise<typeof mongoose> {
+  const uri = process.env.MONGODB_URI || DEFAULT_MONGODB_URI;
+
   if (cached?.conn) {
     return cached.conn;
   }
@@ -39,7 +37,7 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
       serverSelectionTimeoutMS: 5000,
     };
 
-    cached!.promise = mongoose.connect(MONGODB_URI, opts).then((m) => {
+    cached!.promise = mongoose.connect(uri, opts).then((m) => {
       console.log('Successfully connected to ZemenServe Database');
       return m;
     });
@@ -49,6 +47,7 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
     cached!.conn = await cached!.promise;
   } catch (e) {
     cached!.promise = null;
+    console.error('MongoDB connection warning:', e);
     throw e;
   }
 
