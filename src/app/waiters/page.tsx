@@ -2,12 +2,12 @@
 
 import React from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { CashierPosView } from '@/components/pos/CashierPosView';
+import { WaiterManagementView } from '@/components/waiters/WaiterManagementView';
 
-export default function Home() {
+export default function WaitersPage() {
   return (
     <DashboardLayout>
-      <CashierPosView />
+      <WaiterManagementView />
     </DashboardLayout>
   );
 }

@@ -2,12 +2,12 @@
 
 import React from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { CashierPosView } from '@/components/pos/CashierPosView';
+import { KitchenDisplayView } from '@/components/kitchen/KitchenDisplayView';
 
-export default function Home() {
+export default function KdsTabMinimalPage() {
   return (
     <DashboardLayout>
-      <CashierPosView />
+      <KitchenDisplayView />
     </DashboardLayout>
   );
 }
