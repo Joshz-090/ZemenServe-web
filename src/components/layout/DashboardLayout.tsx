@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { LoginPage } from '@/components/auth/LoginPage';
+import { PageSkeleton } from '@/components/layout/PageSkeleton';
 import { store } from '@/lib/store';
 import {
   ShoppingBag,
@@ -28,11 +29,42 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
+// Module-Level User Cache for Instant 0ms Sidebar Hydration across routes
+let cachedUserSession: any = null;
+
+const getCachedUser = () => {
+  if (cachedUserSession) return cachedUserSession;
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = sessionStorage.getItem('zemenserve_session_user');
+      if (stored) {
+        cachedUserSession = JSON.parse(stored);
+        return cachedUserSession;
+      }
+    } catch {}
+  }
+  return null;
+};
+
+const setCachedUser = (user: any) => {
+  cachedUserSession = user;
+  if (typeof window !== 'undefined') {
+    try {
+      if (user) {
+        sessionStorage.setItem('zemenserve_session_user', JSON.stringify(user));
+      } else {
+        sessionStorage.removeItem('zemenserve_session_user');
+      }
+    } catch {}
+  }
+};
+
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [authLoading, setAuthLoading] = useState<boolean>(true);
+  const initialUser = getCachedUser();
+  const [currentUser, setCurrentUser] = useState<any>(() => initialUser);
+  const [authLoading, setAuthLoading] = useState<boolean>(() => !initialUser);
   const [timeStr, setTimeStr] = useState<string>('');
   const [dateStr, setDateStr] = useState<string>('');
   const [pendingOrdersCount, setPendingOrdersCount] = useState<number>(0);
@@ -48,8 +80,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         if (res.ok && contentType.includes('application/json')) {
           const data = await res.json();
           if (data.success && data.user) {
+            setCachedUser(data.user);
             setCurrentUser(data.user);
+          } else {
+            setCachedUser(null);
+            setCurrentUser(null);
           }
+        } else {
+          setCachedUser(null);
+          setCurrentUser(null);
         }
       } catch (err) {
         console.error('Session check error:', err);
@@ -66,6 +105,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
+      setCachedUser(null);
       setCurrentUser(null);
       router.push('/');
     }
@@ -157,6 +197,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return (
       <LoginPage
         onLoginSuccess={(user) => {
+          setCachedUser(user);
           setCurrentUser(user);
           if (user.role === 'Chef') router.push('/kitchen');
           else if (user.role === 'Waiter') router.push('/waiters');
@@ -455,35 +496,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main View Area */}
       <main className="flex-1 min-w-0 p-4 lg:p-8 flex flex-col pt-20 lg:pt-8 overflow-y-auto">
         {authLoading ? (
-          <div className="flex flex-col gap-6 animate-pulse">
-            {/* Main Content Skeleton */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800/60">
-              <div className="space-y-2">
-                <div className="w-48 h-7 rounded-lg bg-slate-800/80" />
-                <div className="w-64 h-4 rounded bg-slate-800/50" />
-              </div>
-              <div className="hidden sm:flex items-center gap-3">
-                <div className="w-32 h-10 rounded-xl bg-slate-900 border border-slate-800" />
-                <div className="w-32 h-10 rounded-xl bg-slate-900 border border-slate-800" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 flex-1">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div key={i} className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800/60 space-y-4 flex flex-col justify-between">
-                  <div className="w-full h-28 rounded-xl bg-slate-800/50" />
-                  <div className="space-y-2">
-                    <div className="w-3/4 h-4 rounded bg-slate-800/80" />
-                    <div className="w-1/2 h-3 rounded bg-slate-800/50" />
-                  </div>
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="w-20 h-6 rounded-lg bg-amber-500/20 border border-amber-500/30" />
-                    <div className="w-8 h-8 rounded-xl bg-slate-800" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <PageSkeleton pathname={pathname} />
         ) : (
           React.Children.map(children, (child) => {
             if (React.isValidElement(child)) {

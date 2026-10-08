@@ -49,3 +49,24 @@ body {
     display: none !important;
   }
 }
+
+/* Facebook / Instagram Modern Wave Shimmer Skeleton */
+@keyframes shimmer-wave {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(15, 23, 42, 0.7) 0%,
+    rgba(51, 65, 85, 0.4) 50%,
+    rgba(15, 23, 42, 0.7) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-wave 1.6s infinite linear;
+}

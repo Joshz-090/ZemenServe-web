@@ -3,13 +3,23 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { store } from '@/lib/store';
 import { MenuItem, Waiter, Order } from '@/lib/types';
-import { Search, ShoppingBag, Plus, Minus, Trash2, CheckCircle2, Printer, Utensils, User, Clock, CreditCard, X, Filter, ChevronLeft, ChevronRight, Grid, XCircle } from 'lucide-react';
+import { Search, ShoppingBag, Plus, Minus, Trash2, CheckCircle2, Printer, Utensils, User, Clock, CreditCard, X, Filter, ChevronLeft, ChevronRight, Grid, XCircle, Coffee, Wine, Sparkles, Flame, Check } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 // Module-Level Cache Memory for 0ms instant load
 let posMenuCache: MenuItem[] | null = null;
 let posWaiterCache: Waiter[] | null = null;
 let posActiveOrdersCache: Order[] | null = null;
+
+// Category Icon Map for POS Food Cards
+const getCategoryIcon = (category: string) => {
+  const lower = (category || '').toLowerCase();
+  if (lower.includes('drink') || lower.includes('beverage') || lower.includes('juice') || lower.includes('soft') || lower.includes('beer')) return Wine;
+  if (lower.includes('coffee') || lower.includes('tea') || lower.includes('hot') || lower.includes('macchiato')) return Coffee;
+  if (lower.includes('special') || lower.includes('chef') || lower.includes('combo')) return Sparkles;
+  if (lower.includes('fast') || lower.includes('burger') || lower.includes('pizza') || lower.includes('tibs')) return Flame;
+  return Utensils;
+};
 
 export function CashierPosView() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>(() => posMenuCache || []);
@@ -425,47 +435,84 @@ export function CashierPosView() {
             </div>
           </div>
 
-          {/* Menu Items Grid */}
-          <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {filteredItems.map((item) => {
-              const inCart = cart.find((c) => c.menuItem.id === item.id);
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => addToCart(item)}
-                  className={`group relative flex flex-col justify-between p-4 rounded-xl border transition-all cursor-pointer select-none ${
-                    inCart
-                      ? 'bg-amber-500/10 border-amber-500/50 shadow-lg shadow-amber-500/10'
-                      : 'bg-slate-950/50 border-slate-800/80 hover:border-amber-500/30 hover:bg-slate-900'
-                  }`}
-                >
-                  <div>
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-amber-400 border border-amber-500/10 uppercase tracking-wider">
-                        {item.category}
+          {/* Menu Items Grid - FIXED UNIFORM CARD GEOMETRY */}
+          <div className="flex-1 overflow-y-auto pr-1 grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5 auto-rows-[165px] content-start">
+            {filteredItems.length === 0 ? (
+              <div className="col-span-full h-48 flex flex-col items-center justify-center text-center p-6 bg-slate-950/40 border border-dashed border-slate-800 rounded-2xl">
+                <Utensils className="w-10 h-10 text-slate-600 mb-2 stroke-1 opacity-60" />
+                <p className="text-sm font-bold text-slate-400">No menu items match filter</p>
+                <p className="text-xs text-slate-500 mt-1">Try adjusting search query or category filter</p>
+              </div>
+            ) : (
+              filteredItems.map((item) => {
+                const inCart = cart.find((c) => c.menuItem.id === item.id);
+                const CategoryIcon = getCategoryIcon(item.category);
+
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => addToCart(item)}
+                    className={`group relative flex flex-col justify-between p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer select-none h-[165px] min-h-[165px] max-h-[165px] overflow-hidden ${
+                      inCart
+                        ? 'bg-gradient-to-b from-amber-500/15 via-slate-900/90 to-slate-950 border-amber-500 shadow-lg shadow-amber-500/15 ring-1 ring-amber-500/40'
+                        : 'bg-slate-950/70 border-slate-800/90 hover:border-amber-500/40 hover:bg-slate-900/90 hover:shadow-xl hover:shadow-black/50 hover:-translate-y-0.5'
+                    }`}
+                  >
+                    {/* Top Row: Category Pill + Cart Quantity Indicator */}
+                    <div className="flex items-center justify-between gap-1.5 z-10 shrink-0">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-900/90 text-amber-400 border border-amber-500/20 uppercase tracking-wider max-w-[75%] truncate">
+                        <CategoryIcon className="w-3 h-3 shrink-0 text-amber-400" />
+                        <span className="truncate">{item.category}</span>
                       </span>
-                      {inCart && (
-                        <span className="flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-amber-500 text-slate-950">
+
+                      {inCart ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 animate-pulse shrink-0">
+                          <Check className="w-3 h-3 stroke-[3]" />
                           +{inCart.quantity}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold text-slate-600 group-hover:text-amber-400/60 transition-colors shrink-0">
+                          #{item.id}
                         </span>
                       )}
                     </div>
-                    <h3 className="font-black text-slate-100 group-hover:text-amber-400 transition-colors text-base mb-1">
-                      {item.name}
-                    </h3>
-                  </div>
 
-                  <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-800/60">
-                    <span className="text-base font-black text-amber-400 tracking-tight">
-                      {item.price.toFixed(2)} <span className="text-xs font-normal text-slate-400">ETB</span>
-                    </span>
-                    <button className="p-2 rounded-lg bg-amber-500/20 text-amber-400 hover:bg-amber-500 hover:text-slate-950 transition-all cursor-pointer">
-                      <Plus className="w-4 h-4" />
-                    </button>
+                    {/* Middle Section: Food Title (Fixed height container with line-clamp) */}
+                    <div className="my-auto py-1 z-10">
+                      <h3 className="font-extrabold text-slate-100 group-hover:text-amber-400 transition-colors text-sm line-clamp-2 leading-snug tracking-tight">
+                        {item.name}
+                      </h3>
+                    </div>
+
+                    {/* Bottom Footer Section: Fixed Price Tag & Action Button */}
+                    <div className="pt-2.5 border-t border-slate-800/80 flex items-center justify-between gap-2 z-10 mt-auto shrink-0">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-wider leading-none">Price</span>
+                        <span className="text-base font-black text-amber-400 tracking-tight leading-tight mt-0.5">
+                          {item.price.toFixed(2)} <span className="text-[10px] font-bold text-slate-400">ETB</span>
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        className={`p-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center ${
+                          inCart
+                            ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 hover:bg-amber-400'
+                            : 'bg-slate-900 border border-slate-800 text-amber-400 group-hover:bg-amber-500 group-hover:text-slate-950 group-hover:border-amber-500'
+                        }`}
+                      >
+                        <Plus className="w-4 h-4 stroke-[2.5]" />
+                      </button>
+                    </div>
+
+                    {/* Subtle Corner Glow Accent for Active Items */}
+                    {inCart && (
+                      <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-amber-500/10 rounded-full blur-xl pointer-events-none" />
+                    )}
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 
