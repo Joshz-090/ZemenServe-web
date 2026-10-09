@@ -28,6 +28,7 @@ import {
   ChevronRight,
   Filter,
   X,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface FrontDeskViewProps {
@@ -77,7 +78,12 @@ export function FrontDeskView({ currentUser }: FrontDeskViewProps) {
     setFolioTransactions(store.getFolioTransactions());
   };
 
+  const [checkInErrorMessage, setCheckInErrorMessage] = useState<string | null>(null);
+
   useEffect(() => {
+    store.fetchRoomsFromDB();
+    store.fetchReservationsFromDB();
+    store.fetchGuestsFromDB();
     loadData();
     const unsubscribe = store.subscribe(loadData);
     return () => unsubscribe();
@@ -101,16 +107,22 @@ export function FrontDeskView({ currentUser }: FrontDeskViewProps) {
   const handleOpenCheckIn = (room: Room) => {
     setSelectedRoomForCheckIn(room);
     setDepositAmount(room.pricePerNight);
+    setCheckInErrorMessage(null);
     setShowCheckInModal(true);
   };
 
-  const handleExecuteCheckIn = (e: React.FormEvent) => {
+  const handleExecuteCheckIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    setCheckInErrorMessage(null);
     if (!selectedRoomForCheckIn || !guestName) return;
 
     // Calculate nights
     const start = new Date(checkInDate).getTime();
     const end = new Date(checkOutDate).getTime();
+    if (end <= start) {
+      setCheckInErrorMessage('Check-out date must be after check-in date.');
+      return;
+    }
     const diffDays = Math.max(1, Math.ceil((end - start) / (1000 * 3600 * 24)));
 
     // Register or find guest
@@ -131,7 +143,7 @@ export function FrontDeskView({ currentUser }: FrontDeskViewProps) {
     const nightlyRate = selectedRoomForCheckIn.pricePerNight;
     const totalAmount = nightlyRate * diffDays;
 
-    const res = store.createReservation({
+    const res = await store.createReservationAsync({
       guestId: guest.id,
       guestName: guest.fullName,
       guestPhone: guest.phone,
@@ -150,7 +162,12 @@ export function FrontDeskView({ currentUser }: FrontDeskViewProps) {
       paymentStatus: Number(depositAmount) >= totalAmount ? 'Paid' : depositAmount > 0 ? 'Partial' : 'Pending',
     });
 
-    store.checkInReservation(res.id);
+    if (!res.success) {
+      setCheckInErrorMessage(res.error || 'Check-in failed due to reservation conflict.');
+      return;
+    }
+
+    store.updateRoomStatus(selectedRoomForCheckIn.id, 'Occupied');
 
     setShowCheckInModal(false);
     resetForm();
@@ -530,6 +547,12 @@ export function FrontDeskView({ currentUser }: FrontDeskViewProps) {
             </div>
 
             <form onSubmit={handleExecuteCheckIn} className="space-y-4 text-xs">
+              {checkInErrorMessage && (
+                <div className="p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{checkInErrorMessage}</span>
+                </div>
+              )}
               {/* Guest Personal Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>

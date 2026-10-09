@@ -40,6 +40,8 @@ export function ReservationsView() {
   );
   const [bookingSource, setBookingSource] = useState<any>('Hotel Website');
   const [depositPaid, setDepositPaid] = useState<number>(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const loadData = () => {
     setReservations(store.getReservations());
@@ -47,6 +49,8 @@ export function ReservationsView() {
   };
 
   useEffect(() => {
+    store.fetchReservationsFromDB();
+    store.fetchRoomsFromDB();
     loadData();
     const unsubscribe = store.subscribe(loadData);
     return () => unsubscribe();
@@ -62,17 +66,24 @@ export function ReservationsView() {
     return matchesSearch && matchesStatus && matchesSource;
   });
 
-  const handleCreateReservation = (e: React.FormEvent) => {
+  const handleCreateReservation = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
     const room = rooms.find((r) => r.id === selectedRoomId) || rooms[0];
     if (!room || !guestName) return;
 
     const start = new Date(checkInDate).getTime();
     const end = new Date(checkOutDate).getTime();
+    if (end <= start) {
+      setErrorMessage('Check-out date must be after check-in date.');
+      return;
+    }
+
     const nights = Math.max(1, Math.ceil((end - start) / (1000 * 3600 * 24)));
     const totalAmount = room.pricePerNight * nights;
 
-    store.createReservation({
+    setSubmitting(true);
+    const res = await store.createReservationAsync({
       guestId: Math.floor(Math.random() * 1000),
       guestName,
       guestPhone: guestPhone || '+251 900 000 000',
@@ -90,6 +101,12 @@ export function ReservationsView() {
       depositPaid: Number(depositPaid) || 0,
       paymentStatus: Number(depositPaid) >= totalAmount ? 'Paid' : depositPaid > 0 ? 'Partial' : 'Pending',
     });
+    setSubmitting(false);
+
+    if (!res.success) {
+      setErrorMessage(res.error || 'Failed to create reservation.');
+      return;
+    }
 
     setShowModal(false);
     setGuestName('');
@@ -299,6 +316,12 @@ export function ReservationsView() {
             </div>
 
             <form onSubmit={handleCreateReservation} className="space-y-3 text-xs">
+              {errorMessage && (
+                <div className="p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{errorMessage}</span>
+                </div>
+              )}
               <div>
                 <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">Guest Name *</label>
                 <input

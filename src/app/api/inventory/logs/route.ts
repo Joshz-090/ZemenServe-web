@@ -1,9 +1,13 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import { InventoryLogModel } from '@/lib/models/InventoryLog';
+import { verifySessionAndRole } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const auth = await verifySessionAndRole(req, ['Admin', 'Manager', 'Accountant']);
+    if (auth.errorResponse) return auth.errorResponse;
+
     await connectToDatabase();
     const docs = await InventoryLogModel.find().sort({ createdAt: -1 }).limit(100);
 

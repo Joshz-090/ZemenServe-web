@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import { MenuItemModel } from '@/lib/models/MenuItem';
 import { CategoryModel } from '@/lib/models/Category';
+import { verifySessionAndRole } from '@/lib/auth';
+import { getNextSequenceValue } from '@/lib/models/Counter';
 
 const INITIAL_CATEGORIES = [
   { idNumber: 1, name: 'Traditional Dishes', isActive: true },
@@ -23,9 +25,12 @@ const INITIAL_MENU_ITEMS = [
   { idNumber: 10, name: 'Ambo Mineral Water', category: 'Beverages', price: 35.0, isActive: true, recipes: [{ ingredientId: 12, quantityRequired: 1.0 }] },
 ];
 
-// GET: Fetch all menu items & categories from database
-export async function GET() {
+// GET: Fetch all menu items & categories from database (Any active user)
+export async function GET(req: NextRequest) {
   try {
+    const auth = await verifySessionAndRole(req);
+    if (auth.errorResponse) return auth.errorResponse;
+
     await connectToDatabase();
 
     // Auto-seed categories if collection is empty
@@ -76,9 +81,12 @@ export async function GET() {
   }
 }
 
-// POST: Add new menu item to database
-export async function POST(req: Request) {
+// POST: Add new menu item to database (Admin, Manager)
+export async function POST(req: NextRequest) {
   try {
+    const auth = await verifySessionAndRole(req, ['Admin', 'Manager']);
+    if (auth.errorResponse) return auth.errorResponse;
+
     await connectToDatabase();
     const body = await req.json();
 
@@ -90,8 +98,10 @@ export async function POST(req: Request) {
       );
     }
 
+    // Determine next menu item ID atomically
     const lastDoc = await MenuItemModel.findOne().sort({ idNumber: -1 }).lean();
-    const nextId = lastDoc && lastDoc.idNumber ? lastDoc.idNumber + 1 : 1;
+    const fallbackMaxId = lastDoc && lastDoc.idNumber ? lastDoc.idNumber + 1 : 1;
+    const nextId = await getNextSequenceValue('menuItemId', fallbackMaxId);
 
     const newItem = await MenuItemModel.create({
       idNumber: nextId,
@@ -128,9 +138,12 @@ export async function POST(req: Request) {
   }
 }
 
-// PUT: Edit menu item or toggle active status in database
-export async function PUT(req: Request) {
+// PUT: Edit menu item or toggle active status in database (Admin, Manager)
+export async function PUT(req: NextRequest) {
   try {
+    const auth = await verifySessionAndRole(req, ['Admin', 'Manager']);
+    if (auth.errorResponse) return auth.errorResponse;
+
     await connectToDatabase();
     const body = await req.json();
 
@@ -178,9 +191,12 @@ export async function PUT(req: Request) {
   }
 }
 
-// DELETE: Delete a menu item from database
-export async function DELETE(req: Request) {
+// DELETE: Delete a menu item from database (Admin, Manager)
+export async function DELETE(req: NextRequest) {
   try {
+    const auth = await verifySessionAndRole(req, ['Admin', 'Manager']);
+    if (auth.errorResponse) return auth.errorResponse;
+
     await connectToDatabase();
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');

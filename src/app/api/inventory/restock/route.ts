@@ -1,10 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import { IngredientModel } from '@/lib/models/Ingredient';
 import { InventoryLogModel } from '@/lib/models/InventoryLog';
+import { verifySessionAndRole } from '@/lib/auth';
+import { getNextSequenceValue } from '@/lib/models/Counter';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    const auth = await verifySessionAndRole(req, ['Admin', 'Manager']);
+    if (auth.errorResponse) return auth.errorResponse;
+
     await connectToDatabase();
     const body = await req.json();
 
@@ -36,9 +41,10 @@ export async function POST(req: Request) {
 
     await ing.save();
 
-    // Log the transaction in database
+    // Log the transaction in database atomically
     const maxLogDoc = await InventoryLogModel.findOne().sort({ idNumber: -1 });
-    const nextLogId = maxLogDoc ? maxLogDoc.idNumber + 1 : 1;
+    const fallbackMaxId = maxLogDoc ? maxLogDoc.idNumber + 1 : 1;
+    const nextLogId = await getNextSequenceValue('inventoryLogId', fallbackMaxId);
 
     const log = await InventoryLogModel.create({
       idNumber: nextLogId,

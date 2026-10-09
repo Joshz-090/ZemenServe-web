@@ -67,9 +67,8 @@ const setCachedUser = (user: any) => {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const initialUser = getCachedUser();
-  const [currentUser, setCurrentUser] = useState<any>(() => initialUser);
-  const [authLoading, setAuthLoading] = useState<boolean>(() => !initialUser);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
   const [timeStr, setTimeStr] = useState<string>('');
   const [dateStr, setDateStr] = useState<string>('');
   const [pendingOrdersCount, setPendingOrdersCount] = useState<number>(0);
@@ -212,16 +211,36 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [authLoading, currentUser, pathname, router]);
 
-  // If not logged in and auth finished, display the Login Page
-  if (!authLoading && !currentUser) {
+  // 1. Display a sleek branded loading screen while verifying session against server (NEVER flash UI)
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#070a12] flex flex-col items-center justify-center p-6 space-y-4">
+        <div className="relative flex items-center justify-center">
+          <div className="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/30 animate-pulse flex items-center justify-center text-amber-400 shadow-xl shadow-amber-500/10">
+            <Sparkles className="w-8 h-8 animate-spin" />
+          </div>
+        </div>
+        <div className="text-center space-y-1">
+          <h2 className="text-sm font-black tracking-widest text-slate-200 uppercase">ZemenServe ERP</h2>
+          <p className="text-xs text-slate-500 font-medium">Verifying secure authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Display Login Page if user is unauthenticated
+  if (!currentUser) {
     return (
       <LoginPage
         onLoginSuccess={(user) => {
           setCachedUser(user);
           setCurrentUser(user);
-          if (user.role === 'Chef') router.push('/kitchen');
+          if (user.role === 'Admin' || user.role === 'Manager') router.push('/admin');
+          else if (user.role === 'Chef') router.push('/kitchen');
           else if (user.role === 'Waiter') router.push('/waiters');
-          else router.push('/pos');
+          else if (user.role === 'Receptionist' || user.role === 'Housekeeper') router.push('/reception');
+          else if (user.role === 'Accountant') router.push('/finance');
+          else router.push('/admin');
         }}
       />
     );
@@ -309,6 +328,33 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* NAVIGATION ITEMS */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 no-scrollbar">
+          {/* Executive Console (Visible to Admin & Manager) */}
+          {(currentUser?.role === 'Admin' || currentUser?.role === 'Manager') && (
+            <div>
+              <div className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-amber-400/90 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                <span>Executive Management</span>
+              </div>
+              <nav className="space-y-1">
+                <Link
+                  href="/admin"
+                  onClick={closeSidebarOnMobile}
+                  className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between border ${
+                    isCurrent('/admin')
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/20 font-black'
+                      : 'text-amber-300 bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/20'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck className="w-4 h-4 text-amber-400" />
+                    <span>Admin Dashboard</span>
+                  </div>
+                  {isCurrent('/admin') && <ChevronRight className="w-4 h-4 opacity-70" />}
+                </Link>
+              </nav>
+            </div>
+          )}
+
           {/* Front Office & Rooms */}
           <div>
             <div className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500">

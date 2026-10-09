@@ -181,6 +181,9 @@ class ZemenServeStore {
     logs: 0,
     audit: 0,
     waiters: 0,
+    reservations: 0,
+    guests: 0,
+    rooms: 0,
   };
   private readonly CACHE_TTL_MS = 15000; // 15s in-memory cache TTL
 
@@ -576,6 +579,78 @@ class ZemenServeStore {
       // Offline fallback: return current in-memory audit logs silently
     }
     return [...this.auditLogs];
+  }
+
+  public async fetchReservationsFromDB(force = false): Promise<Reservation[]> {
+    if (typeof window === 'undefined') return [...this.reservations];
+    const now = Date.now();
+    if (!force && now - this.lastFetchTime.reservations < this.CACHE_TTL_MS) {
+      return [...this.reservations];
+    }
+    try {
+      const res = await fetch('/api/reservations');
+      if (!res.ok) return [...this.reservations];
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.reservations)) {
+          this.reservations = data.reservations;
+          this.lastFetchTime.reservations = now;
+          this.notify();
+        }
+      }
+    } catch {
+      // Offline fallback
+    }
+    return [...this.reservations];
+  }
+
+  public async fetchGuestsFromDB(force = false): Promise<Guest[]> {
+    if (typeof window === 'undefined') return [...this.guests];
+    const now = Date.now();
+    if (!force && now - this.lastFetchTime.guests < this.CACHE_TTL_MS) {
+      return [...this.guests];
+    }
+    try {
+      const res = await fetch('/api/guests');
+      if (!res.ok) return [...this.guests];
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.guests)) {
+          this.guests = data.guests;
+          this.lastFetchTime.guests = now;
+          this.notify();
+        }
+      }
+    } catch {
+      // Offline fallback
+    }
+    return [...this.guests];
+  }
+
+  public async fetchRoomsFromDB(force = false): Promise<Room[]> {
+    if (typeof window === 'undefined') return [...this.rooms];
+    const now = Date.now();
+    if (!force && now - this.lastFetchTime.rooms < this.CACHE_TTL_MS) {
+      return [...this.rooms];
+    }
+    try {
+      const res = await fetch('/api/rooms');
+      if (!res.ok) return [...this.rooms];
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.rooms)) {
+          this.rooms = data.rooms;
+          this.lastFetchTime.rooms = now;
+          this.notify();
+        }
+      }
+    } catch {
+      // Offline fallback
+    }
+    return [...this.rooms];
   }
 
   public getIngredients(): Ingredient[] {
@@ -1153,6 +1228,19 @@ class ZemenServeStore {
       }
       this.logAudit('Staff', 'Update Room Status', `Room #${room.roomNumber} set to ${status}`);
       this.notify();
+
+      if (typeof window !== 'undefined') {
+        fetch('/api/rooms', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: roomId, status }),
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.success) this.fetchRoomsFromDB(true);
+          })
+          .catch(() => {});
+      }
     }
   }
 
@@ -1178,6 +1266,20 @@ class ZemenServeStore {
     this.guests.push(newGuest);
     this.logAudit('Front Desk', 'Register Guest', `Registered guest: ${newGuest.fullName}`);
     this.notify();
+
+    if (typeof window !== 'undefined') {
+      fetch('/api/guests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(guestData),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.success) this.fetchGuestsFromDB(true);
+        })
+        .catch(() => {});
+    }
+
     return newGuest;
   }
 
@@ -1239,7 +1341,45 @@ class ZemenServeStore {
       `Created booking ${bookingRef} for ${newReservation.guestName} (Room ${newReservation.roomNumber})`
     );
     this.notify();
+
+    if (typeof window !== 'undefined') {
+      fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(resData),
+      })
+        .then(async (r) => {
+          const data = await r.json();
+          if (data.success) {
+            this.fetchReservationsFromDB(true);
+            this.fetchRoomsFromDB(true);
+          }
+        })
+        .catch(() => {});
+    }
+
     return newReservation;
+  }
+
+  public async createReservationAsync(
+    resData: Omit<Reservation, 'id' | 'bookingRef' | 'createdAt'>
+  ): Promise<{ success: boolean; error?: string; reservation?: Reservation }> {
+    try {
+      const res = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(resData),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, error: data.error || 'Failed to create reservation' };
+      }
+      await this.fetchReservationsFromDB(true);
+      await this.fetchRoomsFromDB(true);
+      return { success: true, reservation: data.reservation };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
   }
 
   public checkInReservation(resId: number): void {
@@ -1254,6 +1394,22 @@ class ZemenServeStore {
       }
       this.logAudit('Front Desk', 'Guest Check-In', `Checked in ${res.guestName} to Room ${res.roomNumber}`);
       this.notify();
+
+      if (typeof window !== 'undefined') {
+        fetch('/api/reservations', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: res.id, status: 'Checked-In' }),
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.success) {
+              this.fetchReservationsFromDB(true);
+              this.fetchRoomsFromDB(true);
+            }
+          })
+          .catch(() => {});
+      }
     }
   }
 
@@ -1279,6 +1435,22 @@ class ZemenServeStore {
       }
       this.logAudit('Front Desk', 'Guest Check-Out', `Checked out ${res.guestName} from Room ${res.roomNumber}`);
       this.notify();
+
+      if (typeof window !== 'undefined') {
+        fetch('/api/reservations', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: res.id, status: 'Checked-Out' }),
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.success) {
+              this.fetchReservationsFromDB(true);
+              this.fetchRoomsFromDB(true);
+            }
+          })
+          .catch(() => {});
+      }
     }
   }
 

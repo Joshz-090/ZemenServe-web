@@ -1,13 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { connectToDatabase } from '@/lib/db';
 import { UserModel } from '@/lib/models/User';
+import { verifySessionAndRole } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-// GET all users & pending password reset requests
-export async function GET() {
+// GET all users & pending password reset requests (Admin or Manager)
+export async function GET(req: NextRequest) {
   try {
+    const auth = await verifySessionAndRole(req, ['Admin', 'Manager']);
+    if (auth.errorResponse) return auth.errorResponse;
+
     await connectToDatabase();
 
     const users = await UserModel.find()
@@ -44,8 +48,11 @@ export async function GET() {
 }
 
 // POST: Admin creates a new user
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    const auth = await verifySessionAndRole(req, ['Admin']);
+    if (auth.errorResponse) return auth.errorResponse;
+
     await connectToDatabase();
     const body = await req.json();
     const { name, phoneNumber, role, username, password, email } = body;
@@ -109,8 +116,11 @@ export async function POST(req: Request) {
 }
 
 // PUT: Admin resets user password or toggles active status / resolves reset request
-export async function PUT(req: Request) {
+export async function PUT(req: NextRequest) {
   try {
+    const auth = await verifySessionAndRole(req, ['Admin']);
+    if (auth.errorResponse) return auth.errorResponse;
+
     await connectToDatabase();
     const body = await req.json();
     const { userId, newPassword, role, isActive, clearResetRequest } = body;
@@ -157,8 +167,11 @@ export async function PUT(req: Request) {
 }
 
 // DELETE: Admin deletes a user
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
   try {
+    const auth = await verifySessionAndRole(req, ['Admin']);
+    if (auth.errorResponse) return auth.errorResponse;
+
     await connectToDatabase();
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('id');
