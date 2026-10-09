@@ -46,7 +46,8 @@ export function CashierPosView() {
   
   // Checkout & Receipt Modals state
   const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
-  const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'Telebirr' | 'CBE Birr' | 'Card'>('Cash');
+  const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'Telebirr' | 'CBE Birr' | 'Card' | 'Room Charge'>('Cash');
+  const [selectedRoomForCharge, setSelectedRoomForCharge] = useState<string>('101');
   const [cashGiven, setCashGiven] = useState<string>('');
   const [completedOrderForReceipt, setCompletedOrderForReceipt] = useState<Order | null>(null);
 
@@ -218,6 +219,11 @@ export function CashierPosView() {
   const handleCompletePaymentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedActiveOrder) return;
+
+    if (paymentMethod === 'Room Charge') {
+      const itemsSummary = selectedActiveOrder.orderItems.map((i) => `${i.quantity}x ${i.menuItemName || 'Item'}`).join(', ');
+      store.chargeOrderToGuestRoom(selectedRoomForCharge, selectedActiveOrder.id, selectedActiveOrder.totalAmount, itemsSummary);
+    }
 
     const completed = store.completeOrderPayment(selectedActiveOrder.id, paymentMethod);
     if (completed) {
@@ -833,23 +839,48 @@ export function CashierPosView() {
 
               <div>
                 <label className="text-xs font-semibold text-slate-300 mb-1.5 block">Payment Method *</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(['Cash', 'Telebirr', 'CBE Birr', 'Card'] as const).map((method) => (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {(['Cash', 'Telebirr', 'CBE Birr', 'Card', 'Room Charge'] as const).map((method) => (
                     <button
                       key={method}
                       type="button"
-                      onClick={() => setPaymentMethod(method)}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold transition border cursor-pointer ${
+                      onClick={() => setPaymentMethod(method as any)}
+                      className={`py-2 px-2.5 rounded-xl text-xs font-bold transition border cursor-pointer ${
                         paymentMethod === method
                           ? 'bg-amber-500 text-slate-950 border-amber-500 font-black'
                           : 'bg-slate-950 text-slate-400 border-slate-800 hover:bg-slate-900'
                       }`}
                     >
-                      {method}
+                      {method === 'Room Charge' ? '🏨 Room Folio' : method}
                     </button>
                   ))}
                 </div>
               </div>
+
+              {paymentMethod === 'Room Charge' && (
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 space-y-2">
+                  <label className="text-xs font-bold text-amber-400 block">Select Active Checked-In Guest Room</label>
+                  <select
+                    value={selectedRoomForCharge}
+                    onChange={(e) => setSelectedRoomForCharge(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 text-xs font-bold focus:outline-none focus:border-amber-500"
+                  >
+                    {store.getRooms().filter((r) => r.status === 'Occupied').length > 0 ? (
+                      store
+                        .getRooms()
+                        .filter((r) => r.status === 'Occupied')
+                        .map((r) => (
+                          <option key={r.id} value={r.roomNumber}>
+                            Room #{r.roomNumber} - Guest: {r.currentGuestName || 'Checked-In Guest'}
+                          </option>
+                        ))
+                    ) : (
+                      <option value="101">Room #101 - Dawit Yohannes</option>
+                    )}
+                  </select>
+                  <p className="text-[10px] text-slate-400">Order amount will be posted directly to the guest's hotel folio.</p>
+                </div>
+              )}
 
               {paymentMethod === 'Cash' && (
                 <div>

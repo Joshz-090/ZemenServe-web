@@ -11,6 +11,15 @@ import {
   Recipe,
   SystemUser,
   Waiter,
+  Room,
+  Guest,
+  Reservation,
+  FolioTransaction,
+  HousekeepingTask,
+  EventHall,
+  EventBooking,
+  StaffMember,
+  RoomStatus,
 } from './types';
 
 // In-Memory Database Store with Seed Data (matches ZemenServe C# specs)
@@ -30,6 +39,62 @@ class ZemenServeStore {
     { id: 2, username: 'supervisor', name: 'Almaz Tadesse', role: 'Manager', pin: '5555', isActive: true },
     { id: 3, username: 'cashier1', name: 'Abebe Kebede', role: 'Cashier', pin: '1111', isActive: true },
     { id: 4, username: 'chef1', name: 'Chef Yonas', role: 'Chef', pin: '2222', isActive: true },
+    { id: 5, username: 'reception', name: 'Hiwot Tadesse', role: 'Receptionist', pin: '3333', isActive: true },
+    { id: 6, username: 'housekeeper', name: 'Tigist Haile', role: 'Housekeeper', pin: '4444', isActive: true },
+    { id: 7, username: 'accountant', name: 'Almaz Tadesse', role: 'Accountant', pin: '5555', isActive: true },
+  ];
+
+  private rooms: Room[] = [
+    { id: 1, roomNumber: '101', type: 'Standard Single', floor: 1, pricePerNight: 2500, capacity: 1, status: 'Occupied', amenities: ['Free Wi-Fi', 'TV', 'Ensuite Bathroom'], currentGuestName: 'Dawit Yohannes', currentReservationId: 101 },
+    { id: 2, roomNumber: '102', type: 'Standard Single', floor: 1, pricePerNight: 2500, capacity: 1, status: 'Clean', amenities: ['Free Wi-Fi', 'TV', 'Ensuite Bathroom'] },
+    { id: 3, roomNumber: '103', type: 'Deluxe Double', floor: 1, pricePerNight: 4000, capacity: 2, status: 'Occupied', amenities: ['Free Wi-Fi', '4K Smart TV', 'Balcony', 'MiniBar'], currentGuestName: 'Sarah Jenkins', currentReservationId: 102 },
+    { id: 4, roomNumber: '104', type: 'Deluxe Double', floor: 1, pricePerNight: 4000, capacity: 2, status: 'Dirty', amenities: ['Free Wi-Fi', '4K Smart TV', 'Balcony', 'MiniBar'] },
+    { id: 5, roomNumber: '201', type: 'Executive Suite', floor: 2, pricePerNight: 8500, capacity: 3, status: 'Occupied', amenities: ['Free Wi-Fi', 'Jacuzzi', 'Living Lounge', 'Espresso Machine', 'City View'], currentGuestName: 'Ato Solomon Bekele', currentReservationId: 103 },
+    { id: 6, roomNumber: '202', type: 'Executive Suite', floor: 2, pricePerNight: 8500, capacity: 3, status: 'Inspected', amenities: ['Free Wi-Fi', 'Jacuzzi', 'Living Lounge', 'Espresso Machine', 'City View'] },
+    { id: 7, roomNumber: '301', type: 'Presidential Suite', floor: 3, pricePerNight: 18000, capacity: 4, status: 'Clean', amenities: ['24/7 Butler', 'Panoramic View', 'Private Bar', 'Jacuzzi', 'Meeting Area'] },
+    { id: 8, roomNumber: '302', type: 'Family Suite', floor: 3, pricePerNight: 7000, capacity: 4, status: 'Out of Service', amenities: ['2 Bedrooms', 'Kitchenette', 'Free Wi-Fi', 'Playstation 5'] },
+  ];
+
+  private guests: Guest[] = [
+    { id: 1, fullName: 'Dawit Yohannes', email: 'dawit.y@example.com', phone: '+251 911 223 344', idPassportNumber: 'ETH-849204', idType: 'National ID', nationality: 'Ethiopian', vipStatus: true, totalStays: 5, totalSpent: 42500, notes: 'Prefers high floor rooms' },
+    { id: 2, fullName: 'Sarah Jenkins', email: 'sarah.j@travel.com', phone: '+1 415 555 0192', idPassportNumber: 'USA-992014', idType: 'Passport', nationality: 'United States', vipStatus: false, totalStays: 2, totalSpent: 18400, notes: 'Allergic to nuts' },
+    { id: 3, fullName: 'Ato Solomon Bekele', email: 'solomon@bekelegroup.et', phone: '+251 912 345 678', idPassportNumber: 'ETH-102938', idType: 'National ID', nationality: 'Ethiopian', vipStatus: true, totalStays: 12, totalSpent: 128000, notes: 'Corporate VIP Account' },
+  ];
+
+  private reservations: Reservation[] = [
+    { id: 101, bookingRef: 'RES-8491', guestId: 1, guestName: 'Dawit Yohannes', guestPhone: '+251 911 223 344', roomId: 1, roomNumber: '101', roomType: 'Standard Single', checkInDate: '2026-10-08', checkOutDate: '2026-10-11', nights: 3, numberOfGuests: 1, status: 'Checked-In', bookingSource: 'Direct Walk-in', nightlyRate: 2500, totalAmount: 7500, depositPaid: 2500, paymentStatus: 'Partial', createdAt: '2026-10-08T10:00:00.000Z' },
+    { id: 102, bookingRef: 'RES-8492', guestId: 2, guestName: 'Sarah Jenkins', guestPhone: '+1 415 555 0192', roomId: 3, roomNumber: '103', roomType: 'Deluxe Double', checkInDate: '2026-10-09', checkOutDate: '2026-10-13', nights: 4, numberOfGuests: 2, status: 'Checked-In', bookingSource: 'Booking.com', nightlyRate: 4000, totalAmount: 16000, depositPaid: 16000, paymentStatus: 'Paid', createdAt: '2026-10-09T09:30:00.000Z' },
+    { id: 103, bookingRef: 'RES-8493', guestId: 3, guestName: 'Ato Solomon Bekele', guestPhone: '+251 912 345 678', roomId: 5, roomNumber: '201', roomType: 'Executive Suite', checkInDate: '2026-10-07', checkOutDate: '2026-10-12', nights: 5, numberOfGuests: 2, status: 'Checked-In', bookingSource: 'Corporate Partner', nightlyRate: 8500, totalAmount: 42500, depositPaid: 20000, paymentStatus: 'Partial', createdAt: '2026-10-07T14:00:00.000Z' },
+  ];
+
+  private folioTransactions: FolioTransaction[] = [
+    { id: 1, reservationId: 101, roomNumber: '101', guestName: 'Dawit Yohannes', category: 'Room Charge', description: 'Room Charge - 3 Nights @ 2500 ETB/Night', amount: 7500, type: 'Debit', timestamp: '2026-10-08T10:00:00.000Z', postedBy: 'Front Desk' },
+    { id: 2, reservationId: 101, roomNumber: '101', guestName: 'Dawit Yohannes', category: 'Payment Deposit', description: 'Advance Deposit Received (Telebirr)', amount: 2500, type: 'Credit', paymentMethod: 'Telebirr', timestamp: '2026-10-08T10:05:00.000Z', postedBy: 'Front Desk' },
+    { id: 3, reservationId: 102, roomNumber: '103', guestName: 'Sarah Jenkins', category: 'Room Charge', description: 'Room Charge - 4 Nights @ 4000 ETB/Night', amount: 16000, type: 'Debit', timestamp: '2026-10-09T09:30:00.000Z', postedBy: 'Front Desk' },
+    { id: 4, reservationId: 102, roomNumber: '103', guestName: 'Sarah Jenkins', category: 'Payment Deposit', description: 'Full Payment Received (Visa Card)', amount: 16000, type: 'Credit', paymentMethod: 'Card', timestamp: '2026-10-09T09:35:00.000Z', postedBy: 'Front Desk' },
+  ];
+
+  private housekeepingTasks: HousekeepingTask[] = [
+    { id: 1, roomNumber: '104', taskType: 'Full Clean', priority: 'Urgent', assignedStaff: 'Tigist Haile', status: 'Pending', notes: 'Checkout cleanup needed', createdAt: '2026-10-09T09:00:00.000Z' },
+    { id: 2, roomNumber: '202', taskType: 'Touch-Up', priority: 'Normal', assignedStaff: 'Aynalem Wolde', status: 'Completed', notes: 'Inspected and ready for guest', createdAt: '2026-10-09T08:00:00.000Z' },
+    { id: 3, roomNumber: '302', taskType: 'Maintenance Repair', priority: 'Urgent', assignedStaff: 'Yonas Technician', status: 'In Progress', notes: 'AC compressor unit check', createdAt: '2026-10-09T07:30:00.000Z' },
+  ];
+
+  private eventHalls: EventHall[] = [
+    { id: 1, name: 'Lalibela Grand Ballroom', capacity: 350, hourlyRate: 5000, dailyRate: 35000, amenities: ['4K Projector', 'Stage & Sound', 'LED Wall', 'VIP Lounge', 'High Speed Wi-Fi'], status: 'Available' },
+    { id: 2, name: 'Axum Executive Conference Hall', capacity: 80, hourlyRate: 2500, dailyRate: 18000, amenities: ['Smart Board', 'Video Conferencing', 'Podium', 'Coffee Station'], status: 'Available' },
+    { id: 3, name: 'Simien Boardroom', capacity: 20, hourlyRate: 1200, dailyRate: 8000, amenities: ['Leather Chairs', '65" OLED Display', 'HDMI Hub', 'Mini Fridge'], status: 'Available' },
+  ];
+
+  private eventBookings: EventBooking[] = [
+    { id: 1, bookingRef: 'EVT-9001', eventTitle: 'Annual Tech Summit 2026', organizerName: 'Fintech Solutions Ltd', organizerContact: '+251 911 887 766', hallId: 1, hallName: 'Lalibela Grand Ballroom', eventDate: '2026-10-15', startTime: '09:00', endTime: '17:00', expectedAttendees: 250, setupFormat: 'Banquet', cateringPackage: 'VIP 3-Course Buffet', totalAmount: 45000, depositPaid: 20000, status: 'Confirmed' }
+  ];
+
+  private staffMembers: StaffMember[] = [
+    { id: 1, name: 'Tigist Haile', department: 'Housekeeping', role: 'Housekeeper Lead', shift: 'Morning (06:00-14:00)', phone: '+251 911 112 233', status: 'Active' },
+    { id: 2, name: 'Abebe Kebede', department: 'Front Office', role: 'Senior Receptionist', shift: 'Morning (06:00-14:00)', phone: '+251 922 334 455', status: 'Active' },
+    { id: 3, name: 'Almaz Tadesse', department: 'Finance', role: 'Financial Accountant', shift: 'General (08:00-17:00)', phone: '+251 933 445 566', status: 'Active' },
+    { id: 4, name: 'Yonas Technician', department: 'Maintenance', role: 'Chief Engineer', shift: 'General (08:00-17:00)', phone: '+251 944 556 677', status: 'Active' },
   ];
 
   private auditLogs: AuditLog[] = [];
@@ -1071,6 +1136,272 @@ class ZemenServeStore {
       itemsSold: itemsSold.sort((a, b) => b.quantity - a.quantity),
     };
   }
+
+  // ==========================================
+  // HMS ROOMS MANAGEMENT METHODS
+  // ==========================================
+  public getRooms(): Room[] {
+    return [...this.rooms];
+  }
+
+  public updateRoomStatus(roomId: number, status: RoomStatus): void {
+    const room = this.rooms.find((r) => r.id === roomId);
+    if (room) {
+      room.status = status;
+      if (status !== 'Occupied' && !room.currentReservationId) {
+        room.currentGuestName = undefined;
+      }
+      this.logAudit('Staff', 'Update Room Status', `Room #${room.roomNumber} set to ${status}`);
+      this.notify();
+    }
+  }
+
+  public addRoom(roomData: Omit<Room, 'id'>): Room {
+    const newId = this.rooms.length > 0 ? Math.max(...this.rooms.map((r) => r.id)) + 1 : 1;
+    const newRoom: Room = { ...roomData, id: newId };
+    this.rooms.push(newRoom);
+    this.logAudit('Admin', 'Add Room', `Added Room #${newRoom.roomNumber} (${newRoom.type})`);
+    this.notify();
+    return newRoom;
+  }
+
+  // ==========================================
+  // HMS GUESTS MANAGEMENT METHODS
+  // ==========================================
+  public getGuests(): Guest[] {
+    return [...this.guests];
+  }
+
+  public addGuest(guestData: Omit<Guest, 'id' | 'totalStays' | 'totalSpent'>): Guest {
+    const newId = this.guests.length > 0 ? Math.max(...this.guests.map((g) => g.id)) + 1 : 1;
+    const newGuest: Guest = { ...guestData, id: newId, totalStays: 0, totalSpent: 0 };
+    this.guests.push(newGuest);
+    this.logAudit('Front Desk', 'Register Guest', `Registered guest: ${newGuest.fullName}`);
+    this.notify();
+    return newGuest;
+  }
+
+  // ==========================================
+  // HMS RESERVATIONS MANAGEMENT METHODS
+  // ==========================================
+  public getReservations(): Reservation[] {
+    return [...this.reservations];
+  }
+
+  public createReservation(resData: Omit<Reservation, 'id' | 'bookingRef' | 'createdAt'>): Reservation {
+    const newId = this.reservations.length > 0 ? Math.max(...this.reservations.map((r) => r.id)) + 1 : 101;
+    const bookingRef = `RES-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newReservation: Reservation = {
+      ...resData,
+      id: newId,
+      bookingRef,
+      createdAt: new Date().toISOString(),
+    };
+    this.reservations.push(newReservation);
+
+    // Update Room status to Occupied if checking in immediately or reserved
+    const room = this.rooms.find((r) => r.id === newReservation.roomId || r.roomNumber === newReservation.roomNumber);
+    if (room && newReservation.status === 'Checked-In') {
+      room.status = 'Occupied';
+      room.currentGuestName = newReservation.guestName;
+      room.currentReservationId = newReservation.id;
+    }
+
+    // Auto-create room charge transaction in guest folio
+    this.postFolioTransaction({
+      reservationId: newReservation.id,
+      roomNumber: newReservation.roomNumber,
+      guestName: newReservation.guestName,
+      category: 'Room Charge',
+      description: `Room Charge (${newReservation.nights} nights @ ${newReservation.nightlyRate} ETB)`,
+      amount: newReservation.totalAmount,
+      type: 'Debit',
+      postedBy: 'Front Desk',
+    });
+
+    if (newReservation.depositPaid > 0) {
+      this.postFolioTransaction({
+        reservationId: newReservation.id,
+        roomNumber: newReservation.roomNumber,
+        guestName: newReservation.guestName,
+        category: 'Payment Deposit',
+        description: `Advance Deposit Paid`,
+        amount: newReservation.depositPaid,
+        type: 'Credit',
+        paymentMethod: 'Cash',
+        postedBy: 'Front Desk',
+      });
+    }
+
+    this.logAudit(
+      'Front Desk',
+      'Create Reservation',
+      `Created booking ${bookingRef} for ${newReservation.guestName} (Room ${newReservation.roomNumber})`
+    );
+    this.notify();
+    return newReservation;
+  }
+
+  public checkInReservation(resId: number): void {
+    const res = this.reservations.find((r) => r.id === resId);
+    if (res) {
+      res.status = 'Checked-In';
+      const room = this.rooms.find((r) => r.id === res.roomId || r.roomNumber === res.roomNumber);
+      if (room) {
+        room.status = 'Occupied';
+        room.currentGuestName = res.guestName;
+        room.currentReservationId = res.id;
+      }
+      this.logAudit('Front Desk', 'Guest Check-In', `Checked in ${res.guestName} to Room ${res.roomNumber}`);
+      this.notify();
+    }
+  }
+
+  public checkOutReservation(resId: number): void {
+    const res = this.reservations.find((r) => r.id === resId);
+    if (res) {
+      res.status = 'Checked-Out';
+      const room = this.rooms.find((r) => r.id === res.roomId || r.roomNumber === res.roomNumber);
+      if (room) {
+        room.status = 'Dirty';
+        room.currentGuestName = undefined;
+        room.currentReservationId = undefined;
+
+        // Auto-assign housekeeping cleanup task
+        this.addHousekeepingTask({
+          roomNumber: room.roomNumber,
+          taskType: 'Full Clean',
+          priority: 'Urgent',
+          assignedStaff: 'Housekeeping Staff',
+          status: 'Pending',
+          notes: `Post checkout cleaning for Room ${room.roomNumber}`,
+        });
+      }
+      this.logAudit('Front Desk', 'Guest Check-Out', `Checked out ${res.guestName} from Room ${res.roomNumber}`);
+      this.notify();
+    }
+  }
+
+  // ==========================================
+  // HMS FOLIO TRANSACTIONS & ROOM POS CHARGES
+  // ==========================================
+  public getFolioTransactions(): FolioTransaction[] {
+    return [...this.folioTransactions];
+  }
+
+  public getFolioForReservation(reservationId: number): FolioTransaction[] {
+    return this.folioTransactions.filter((tx) => tx.reservationId === reservationId);
+  }
+
+  public postFolioTransaction(txData: Omit<FolioTransaction, 'id' | 'timestamp'>): FolioTransaction {
+    const newId = this.folioTransactions.length > 0 ? Math.max(...this.folioTransactions.map((t) => t.id)) + 1 : 1;
+    const newTx: FolioTransaction = {
+      ...txData,
+      id: newId,
+      timestamp: new Date().toISOString(),
+    };
+    this.folioTransactions.push(newTx);
+    this.notify();
+    return newTx;
+  }
+
+  // Charge POS Restaurant order to checked-in guest room folio
+  public chargeOrderToGuestRoom(roomNumber: string, orderId: number, amount: number, itemsSummary: string): boolean {
+    const activeRes = this.reservations.find((r) => r.roomNumber === roomNumber && r.status === 'Checked-In');
+    if (!activeRes) return false;
+
+    this.postFolioTransaction({
+      reservationId: activeRes.id,
+      roomNumber: roomNumber,
+      guestName: activeRes.guestName,
+      category: 'Restaurant POS',
+      description: `POS Order #${orderId} (${itemsSummary})`,
+      amount,
+      type: 'Debit',
+      postedBy: 'Cashier POS',
+    });
+
+    this.logAudit('POS', 'Room Folio Charge', `Charged ETB ${amount} for Order #${orderId} to Room ${roomNumber}`);
+    this.notify();
+    return true;
+  }
+
+  // ==========================================
+  // HMS HOUSEKEEPING & MAINTENANCE METHODS
+  // ==========================================
+  public getHousekeepingTasks(): HousekeepingTask[] {
+    return [...this.housekeepingTasks];
+  }
+
+  public addHousekeepingTask(taskData: Omit<HousekeepingTask, 'id' | 'createdAt'>): HousekeepingTask {
+    const newId = this.housekeepingTasks.length > 0 ? Math.max(...this.housekeepingTasks.map((t) => t.id)) + 1 : 1;
+    const newTask: HousekeepingTask = {
+      ...taskData,
+      id: newId,
+      createdAt: new Date().toISOString(),
+    };
+    this.housekeepingTasks.push(newTask);
+    this.logAudit('Housekeeping', 'Assign Task', `Assigned ${newTask.taskType} for Room ${newTask.roomNumber}`);
+    this.notify();
+    return newTask;
+  }
+
+  public updateHousekeepingTaskStatus(taskId: number, status: HousekeepingTask['status']): void {
+    const task = this.housekeepingTasks.find((t) => t.id === taskId);
+    if (task) {
+      task.status = status;
+      if (status === 'Completed' || status === 'Inspected') {
+        const room = this.rooms.find((r) => r.roomNumber === task.roomNumber);
+        if (room && room.status === 'Dirty') {
+          room.status = status === 'Inspected' ? 'Inspected' : 'Clean';
+        }
+      }
+      this.logAudit('Housekeeping', 'Update Task Status', `Task #${taskId} set to ${status}`);
+      this.notify();
+    }
+  }
+
+  // ==========================================
+  // HMS EVENT & CONFERENCE HALL METHODS
+  // ==========================================
+  public getEventHalls(): EventHall[] {
+    return [...this.eventHalls];
+  }
+
+  public getEventBookings(): EventBooking[] {
+    return [...this.eventBookings];
+  }
+
+  public createEventBooking(bookingData: Omit<EventBooking, 'id' | 'bookingRef'>): EventBooking {
+    const newId = this.eventBookings.length > 0 ? Math.max(...this.eventBookings.map((b) => b.id)) + 1 : 1;
+    const bookingRef = `EVT-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newBooking: EventBooking = {
+      ...bookingData,
+      id: newId,
+      bookingRef,
+    };
+    this.eventBookings.push(newBooking);
+    this.logAudit('Events', 'Create Event Booking', `Booked ${newBooking.eventTitle} at ${newBooking.hallName}`);
+    this.notify();
+    return newBooking;
+  }
+
+  // ==========================================
+  // HMS STAFF & HR METHODS
+  // ==========================================
+  public getStaffMembers(): StaffMember[] {
+    return [...this.staffMembers];
+  }
+
+  public addStaffMember(staffData: Omit<StaffMember, 'id'>): StaffMember {
+    const newId = this.staffMembers.length > 0 ? Math.max(...this.staffMembers.map((s) => s.id)) + 1 : 1;
+    const newStaff: StaffMember = { ...staffData, id: newId };
+    this.staffMembers.push(newStaff);
+    this.logAudit('HR', 'Add Staff', `Added employee ${newStaff.name} (${newStaff.department})`);
+    this.notify();
+    return newStaff;
+  }
 }
 
 export const store = new ZemenServeStore();
+

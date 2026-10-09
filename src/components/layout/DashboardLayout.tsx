@@ -22,7 +22,12 @@ import {
   X,
   ExternalLink,
   Sparkles,
-  LogOut
+  LogOut,
+  Key,
+  Calendar,
+  DollarSign,
+  Building,
+  Bed
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -173,8 +178,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   useEffect(() => {
     if (!authLoading && currentUser) {
       const role = currentUser.role;
-      if (role === 'Cashier') {
-        const allowed = ['/pos', '/menu', '/inventory', '/daily-report', '/reports', '/orders'];
+      if (role === 'Receptionist') {
+        const allowed = ['/reception', '/reservations', '/housekeeping', '/events'];
+        if (!allowed.includes(pathname)) {
+          router.replace('/reception');
+        }
+      } else if (role === 'Housekeeper') {
+        const allowed = ['/housekeeping'];
+        if (!allowed.includes(pathname)) {
+          router.replace('/housekeeping');
+        }
+      } else if (role === 'Accountant') {
+        const allowed = ['/finance', '/daily-report', '/reports', '/orders'];
+        if (!allowed.includes(pathname)) {
+          router.replace('/finance');
+        }
+      } else if (role === 'Cashier') {
+        const allowed = ['/pos', '/menu', '/inventory', '/daily-report', '/reports', '/orders', '/reception'];
         if (!allowed.includes(pathname)) {
           router.replace('/pos');
         }
@@ -289,144 +309,224 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* NAVIGATION ITEMS */}
         <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 no-scrollbar">
-          {/* Main Operations */}
+          {/* Front Office & Rooms */}
           <div>
             <div className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
-              Main Operations
+              Front Office & Rooms
             </div>
             <nav className="space-y-1">
-              {(currentUser?.role === 'Admin' || currentUser?.role === 'Manager' || currentUser?.role === 'Cashier' || !currentUser) && (
-                <Link
-                  href="/pos"
-                  onClick={closeSidebarOnMobile}
-                  className={`w-full px-3.5 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                    isCurrent('/pos')
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                      : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <ShoppingBag className="w-4 h-4" />
-                    <span>Cashier POS</span>
-                  </div>
-                  {isCurrent('/pos') && <ChevronRight className="w-4 h-4 opacity-70" />}
-                </Link>
-              )}
+              <Link
+                href="/reception"
+                onClick={closeSidebarOnMobile}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                  isCurrent('/reception')
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Key className="w-4 h-4 text-amber-400" />
+                  <span>Reception Desk</span>
+                </div>
+                {isCurrent('/reception') && <ChevronRight className="w-4 h-4 opacity-70" />}
+              </Link>
 
-              {(currentUser?.role === 'Admin' || currentUser?.role === 'Manager' || currentUser?.role === 'Waiter') && (
-                <Link
-                  href="/menu"
-                  onClick={closeSidebarOnMobile}
-                  className={`w-full px-3.5 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                    isCurrent('/menu')
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                      : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Utensils className="w-4 h-4" />
-                    <span>Digital Menu</span>
-                  </div>
-                  {isCurrent('/menu') && <ChevronRight className="w-4 h-4 opacity-70" />}
-                </Link>
-              )}
+              <Link
+                href="/reservations"
+                onClick={closeSidebarOnMobile}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                  isCurrent('/reservations')
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Calendar className="w-4 h-4" />
+                  <span>Reservations Grid</span>
+                </div>
+                {isCurrent('/reservations') && <ChevronRight className="w-4 h-4 opacity-70" />}
+              </Link>
 
-              {(currentUser?.role === 'Admin' || currentUser?.role === 'Manager' || currentUser?.role === 'Chef' || currentUser?.role === 'Cashier') && (
-                <Link
-                  href="/inventory"
-                  onClick={closeSidebarOnMobile}
-                  className={`w-full px-3.5 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                    isCurrent('/inventory')
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                      : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Package className="w-4 h-4" />
-                    <span>Inventory {currentUser?.role === 'Cashier' && '(Read-Only)'}</span>
-                  </div>
-                  {lowStockCount > 0 && (
-                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                  )}
-                </Link>
-              )}
+              <Link
+                href="/housekeeping"
+                onClick={closeSidebarOnMobile}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                  isCurrent('/housekeeping')
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Housekeeping Board</span>
+                </div>
+                {isCurrent('/housekeeping') && <ChevronRight className="w-4 h-4 opacity-70" />}
+              </Link>
+            </nav>
+          </div>
 
-              {(currentUser?.role === 'Admin' || currentUser?.role === 'Manager' || currentUser?.role === 'Cashier') && (
+          {/* Restaurant & Bar POS */}
+          <div>
+            <div className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+              Restaurant & Dining POS
+            </div>
+            <nav className="space-y-1">
+              <Link
+                href="/pos"
+                onClick={closeSidebarOnMobile}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                  isCurrent('/pos')
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>Cashier POS</span>
+                </div>
+                {isCurrent('/pos') && <ChevronRight className="w-4 h-4 opacity-70" />}
+              </Link>
+
+              <Link
+                href="/menu"
+                onClick={closeSidebarOnMobile}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                  isCurrent('/menu')
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Utensils className="w-4 h-4" />
+                  <span>Digital Menu</span>
+                </div>
+                {isCurrent('/menu') && <ChevronRight className="w-4 h-4 opacity-70" />}
+              </Link>
+
+              <Link
+                href="/orders"
+                onClick={closeSidebarOnMobile}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                  isCurrent('/orders')
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Receipt className="w-4 h-4" />
+                  <span>Orders Log</span>
+                </div>
+                {isCurrent('/orders') && <ChevronRight className="w-4 h-4 opacity-70" />}
+              </Link>
+            </nav>
+          </div>
+
+          {/* Hotel ERP & Management */}
+          <div>
+            <div className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
+              Hotel ERP & Management
+            </div>
+            <nav className="space-y-1">
+              <Link
+                href="/finance"
+                onClick={closeSidebarOnMobile}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                  isCurrent('/finance')
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <DollarSign className="w-4 h-4 text-emerald-400" />
+                  <span>Finance & Ledger</span>
+                </div>
+                {isCurrent('/finance') && <ChevronRight className="w-4 h-4 opacity-70" />}
+              </Link>
+
+              <Link
+                href="/events"
+                onClick={closeSidebarOnMobile}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                  isCurrent('/events')
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Building className="w-4 h-4" />
+                  <span>Events & Halls</span>
+                </div>
+                {isCurrent('/events') && <ChevronRight className="w-4 h-4 opacity-70" />}
+              </Link>
+
+              <Link
+                href="/hr"
+                onClick={closeSidebarOnMobile}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                  isCurrent('/hr')
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Users className="w-4 h-4" />
+                  <span>Staff & HR</span>
+                </div>
+                {isCurrent('/hr') && <ChevronRight className="w-4 h-4 opacity-70" />}
+              </Link>
+
+              <Link
+                href="/inventory"
+                onClick={closeSidebarOnMobile}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                  isCurrent('/inventory')
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <Package className="w-4 h-4" />
+                  <span>Inventory Stock</span>
+                </div>
+                {lowStockCount > 0 && (
+                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                )}
+              </Link>
+
+              <Link
+                href="/daily-report"
+                onClick={closeSidebarOnMobile}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                  isCurrent('/daily-report') || isCurrent('/reports')
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <BarChart3 className="w-4 h-4" />
+                  <span>Daily Reports</span>
+                </div>
+                {(isCurrent('/daily-report') || isCurrent('/reports')) && <ChevronRight className="w-4 h-4 opacity-70" />}
+              </Link>
+
+              {(currentUser?.role === 'Admin' || currentUser?.role === 'Manager') && (
                 <Link
-                  href="/daily-report"
+                  href="/admin"
                   onClick={closeSidebarOnMobile}
-                  className={`w-full px-3.5 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                    isCurrent('/daily-report') || isCurrent('/reports')
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                      : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
+                  className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between border ${
+                    isCurrent('/admin')
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/20 font-black'
+                      : 'text-amber-400/90 border-amber-500/20 hover:bg-amber-500/10'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <BarChart3 className="w-4 h-4" />
-                    <span>Daily Reports {currentUser?.role === 'Cashier' && '(Read-Only)'}</span>
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Admin Control</span>
                   </div>
-                  {(isCurrent('/daily-report') || isCurrent('/reports')) && <ChevronRight className="w-4 h-4 opacity-70" />}
                 </Link>
               )}
             </nav>
           </div>
-
-          {/* Secondary Management */}
-          {(currentUser?.role === 'Admin' || currentUser?.role === 'Manager' || currentUser?.role === 'Waiter') && (
-            <div>
-              <div className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                Management & Operations
-              </div>
-              <nav className="space-y-1">
-                <Link
-                  href="/orders"
-                  onClick={closeSidebarOnMobile}
-                  className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                    isCurrent('/orders')
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Receipt className="w-4 h-4" />
-                    <span>Orders Log</span>
-                  </div>
-                </Link>
-
-                <Link
-                  href="/waiters"
-                  onClick={closeSidebarOnMobile}
-                  className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                    isCurrent('/waiters')
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                      : 'text-slate-400 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <Users className="w-4 h-4" />
-                    <span>Waiters</span>
-                  </div>
-                </Link>
-
-                {(currentUser?.role === 'Admin' || currentUser?.role === 'Manager') && (
-                  <Link
-                    href="/admin"
-                    onClick={closeSidebarOnMobile}
-                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between border ${
-                      isCurrent('/admin')
-                        ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/20 font-black'
-                        : 'text-amber-400/90 border-amber-500/20 hover:bg-amber-500/10'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <ShieldCheck className="w-4 h-4" />
-                      <span>Admin Control</span>
-                    </div>
-                  </Link>
-                )}
-              </nav>
-            </div>
-          )}
         </div>
 
         {/* LOGGED IN USER PROFILE & CHEF APP ENDPOINT CARD */}

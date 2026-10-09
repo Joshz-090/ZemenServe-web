@@ -6,7 +6,7 @@ export interface IUser extends Document {
   name: string;
   email: string;
   phoneNumber?: string;
-  role: 'Admin' | 'Manager' | 'Cashier' | 'Chef' | 'Waiter';
+  role: 'Admin' | 'Manager' | 'Cashier' | 'Chef' | 'Waiter' | 'Receptionist' | 'Housekeeper' | 'Accountant';
   isActive: boolean;
   resetRequest?: {
     isPending: boolean;
@@ -27,7 +27,7 @@ const UserSchema: Schema = new Schema(
     role: {
       type: String,
       required: true,
-      enum: ['Admin', 'Manager', 'Cashier', 'Chef', 'Waiter'],
+      enum: ['Admin', 'Manager', 'Cashier', 'Chef', 'Waiter', 'Receptionist', 'Housekeeper', 'Accountant'],
       default: 'Cashier',
     },
     isActive: { type: Boolean, required: true, default: true },
