@@ -388,6 +388,28 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </Link>
 
               <Link
+                href="/kitchen"
+                onClick={closeSidebarOnMobile}
+                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                  isCurrent('/kitchen') || isCurrent('/kds')
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
+                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <ChefHat className="w-4 h-4 text-amber-400" />
+                  <span>Kitchen Display (KDS)</span>
+                </div>
+                {pendingOrdersCount > 0 ? (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] bg-rose-500 text-white font-black animate-pulse">
+                    {pendingOrdersCount}
+                  </span>
+                ) : (
+                  (isCurrent('/kitchen') || isCurrent('/kds')) && <ChevronRight className="w-4 h-4 opacity-70" />
+                )}
+              </Link>
+
+              <Link
                 href="/menu"
                 onClick={closeSidebarOnMobile}
                 className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
@@ -529,8 +551,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </div>
 
-        {/* LOGGED IN USER PROFILE & CHEF APP ENDPOINT CARD */}
-        <div className="p-3 border-t border-slate-800/80 bg-slate-900/50 space-y-2">
+        {/* LOGGED IN USER PROFILE */}
+        <div className="p-3 border-t border-slate-800/80 bg-slate-900/50">
           {/* User Badge */}
           <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2.5 overflow-hidden">
@@ -550,46 +572,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <LogOut className="w-4 h-4" />
             </button>
           </div>
-
-          {/* Chef Kitchen Endpoint Card - ONLY VISIBLE TO Admin, Manager, Chef */}
-          {(currentUser?.role === 'Admin' || currentUser?.role === 'Manager' || currentUser?.role === 'Chef') && (
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 border border-amber-500/20">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <ChefHat className="w-4 h-4 text-amber-400" />
-                  <span className="text-xs font-black text-slate-200">Chef Kitchen Endpoint</span>
-                </div>
-                {pendingOrdersCount > 0 && (
-                  <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-rose-500 text-white font-black animate-pulse">
-                    {pendingOrdersCount}
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-400 mb-3">
-                Independent view for kitchen display screens & chef bump-bars.
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <Link
-                  href="/kitchen"
-                  className="px-2.5 py-2 rounded-xl bg-amber-500 text-slate-950 hover:bg-amber-400 transition-all text-[11px] font-black flex items-center justify-center gap-1 shadow-md shadow-amber-500/20"
-                >
-                  <span>Chef Endpoint</span>
-                  <ExternalLink className="w-3 h-3" />
-                </Link>
-                <Link
-                  href="/kds"
-                  onClick={closeSidebarOnMobile}
-                  className={`px-2.5 py-2 rounded-xl border text-[11px] font-bold transition-all flex items-center justify-center gap-1 ${
-                    isCurrent('/kds')
-                      ? 'bg-amber-500/20 text-amber-400 border-amber-500'
-                      : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-800'
-                  }`}
-                >
-                  <span>In-Tab KDS</span>
-                </Link>
-              </div>
-            </div>
-          )}
         </div>
       </aside>
 
