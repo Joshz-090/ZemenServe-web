@@ -1,9 +1,54 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+function getRoleFromSessionToken(token: string): string | null {
+  try {
+    if (!token || !token.includes('.')) return null;
+    const [payloadBase64] = token.split('.');
+    if (!payloadBase64) return null;
+    let base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
+    while (base64.length % 4) {
+      base64 += '=';
+    }
+    const jsonStr = typeof atob !== 'undefined'
+      ? atob(base64)
+      : Buffer.from(payloadBase64, 'base64url').toString('utf8');
+    const payload = JSON.parse(jsonStr);
+    if (payload.exp && Date.now() > payload.exp) {
+      return null;
+    }
+    return payload.role || null;
+  } catch {
+    return null;
+  }
+}
+
 export function middleware(request: NextRequest) {
   const token = request.cookies.get('zemen_auth_session')?.value;
   const { pathname } = request.nextUrl;
+
+  // Root route redirection based on authenticated user's role
+  if (pathname === '/') {
+    if (token) {
+      const role = getRoleFromSessionToken(token);
+      if (role === 'Admin' || role === 'Manager') {
+        return NextResponse.redirect(new URL('/admin', request.url));
+      } else if (role === 'Cashier') {
+        return NextResponse.redirect(new URL('/pos', request.url));
+      } else if (role === 'Receptionist' || role === 'Housekeeper') {
+        return NextResponse.redirect(new URL('/reception', request.url));
+      } else if (role === 'Accountant') {
+        return NextResponse.redirect(new URL('/finance', request.url));
+      } else if (role === 'Chef') {
+        return NextResponse.redirect(new URL('/kitchen', request.url));
+      } else if (role === 'Waiter') {
+        return NextResponse.redirect(new URL('/waiters', request.url));
+      } else if (role) {
+        return NextResponse.redirect(new URL('/admin', request.url));
+      }
+    }
+    return NextResponse.next();
+  }
 
   const protectedRoutes = [
     '/reception',
@@ -19,7 +64,6 @@ export function middleware(request: NextRequest) {
     '/waiters',
     '/daily-report',
     '/reports',
-    '/housekeeping',
     '/events',
     '/hr',
   ];
@@ -38,6 +82,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/',
     '/reception',
     '/reception/:path*',
     '/reservations',
@@ -64,8 +109,6 @@ export const config = {
     '/daily-report/:path*',
     '/reports',
     '/reports/:path*',
-    '/housekeeping',
-    '/housekeeping/:path*',
     '/events',
     '/events/:path*',
     '/hr',

@@ -6,6 +6,30 @@ export interface IDailyReport extends Document {
   totalCogs: number;
   netProfit: number;
   totalOrders: number;
+  roomRevenue: number;
+  foodRevenue: number;
+  otherRevenue: number;
+  totalLodgingBookings: number;
+  roomSales: {
+    reservationId: number;
+    bookingRef: string;
+    roomNumber: string;
+    roomType: string;
+    guestName: string;
+    guestPhone?: string;
+    idNumber?: string;
+    idType?: string;
+    checkInDate: string;
+    checkOutDate: string;
+    nights: number;
+    rate: number;
+    total: number;
+    depositPaid: number;
+    balanceDue: number;
+    mealPlan?: string;
+    paymentStatus: string;
+    status: string;
+  }[];
   itemsSold: {
     menuItemId: number;
     name: string;
@@ -24,6 +48,32 @@ const DailyReportSchema: Schema = new Schema(
     totalCogs: { type: Number, required: true, default: 0 },
     netProfit: { type: Number, required: true, default: 0 },
     totalOrders: { type: Number, required: true, default: 0 },
+    roomRevenue: { type: Number, required: true, default: 0 },
+    foodRevenue: { type: Number, required: true, default: 0 },
+    otherRevenue: { type: Number, required: true, default: 0 },
+    totalLodgingBookings: { type: Number, required: true, default: 0 },
+    roomSales: [
+      {
+        reservationId: { type: Number },
+        bookingRef: { type: String },
+        roomNumber: { type: String },
+        roomType: { type: String },
+        guestName: { type: String },
+        guestPhone: { type: String },
+        idNumber: { type: String },
+        idType: { type: String },
+        checkInDate: { type: String },
+        checkOutDate: { type: String },
+        nights: { type: Number },
+        rate: { type: Number },
+        total: { type: Number },
+        depositPaid: { type: Number },
+        balanceDue: { type: Number },
+        mealPlan: { type: String },
+        paymentStatus: { type: String },
+        status: { type: String },
+      },
+    ],
     itemsSold: [
       {
         menuItemId: { type: Number, required: true },

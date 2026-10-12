@@ -20,6 +20,10 @@ import {
   EventBooking,
   StaffMember,
   RoomStatus,
+  HotelContract,
+  MealPlan,
+  DailyReportSummary,
+  RoomDailySale,
 } from './types';
 
 // In-Memory Database Store with Seed Data (matches ZemenServe C# specs)
@@ -55,6 +59,69 @@ class ZemenServeStore {
     { id: 8, roomNumber: '302', type: 'Family Suite', floor: 3, pricePerNight: 7000, capacity: 4, status: 'Out of Service', amenities: ['2 Bedrooms', 'Kitchenette', 'Free Wi-Fi', 'Playstation 5'] },
   ];
 
+  private contracts: HotelContract[] = [
+    {
+      id: 1,
+      contractNumber: 'CTR-2026-001',
+      name: 'Ethiopian Airlines Crew Contract',
+      clientName: 'Ethiopian Airlines Group',
+      clientType: 'Airline',
+      contactPerson: 'Capt. Yonas Tefera',
+      phone: '+251 911 500 600',
+      email: 'crew.housing@ethiopianairlines.com',
+      roomType: 'Deluxe Double',
+      agreedRate: 3200,
+      mealPlan: 'Full Board (FB)',
+      includedAmenities: ['Buffet Breakfast', 'Lunch & Dinner Included', 'Airport Shuttle Service', 'High-Speed Wi-Fi', 'Free Laundry'],
+      discountPercentage: 20,
+      startDate: '2026-01-01',
+      endDate: '2026-12-31',
+      notes: 'Standing airline crew agreement: 3 meals/day included at hotel restaurant.',
+      status: 'Active',
+      createdBy: 'Manager',
+    },
+    {
+      id: 2,
+      contractNumber: 'CTR-2026-002',
+      name: 'UNDP Ethiopia Project Retreat',
+      clientName: 'United Nations Development Programme (UNDP)',
+      clientType: 'Government / NGO',
+      contactPerson: 'Dr. Helen Mengistu',
+      phone: '+251 912 334 455',
+      email: 'admin.procurement@undp.org',
+      roomType: 'Executive Suite',
+      agreedRate: 6500,
+      mealPlan: 'Bed & Breakfast (BB)',
+      includedAmenities: ['Complimentary Buffet Breakfast', 'Executive Lounge Access', 'Spa Access', 'Airport Shuttle', 'High-Speed Wi-Fi'],
+      discountPercentage: 23,
+      startDate: '2026-02-15',
+      endDate: '2026-12-31',
+      notes: 'Exempted from local service charge. Bed & breakfast with complimentary spa.',
+      status: 'Active',
+      createdBy: 'Admin',
+    },
+    {
+      id: 3,
+      contractNumber: 'CTR-2026-003',
+      name: 'Commercial Bank of Ethiopia Training Group',
+      clientName: 'Commercial Bank of Ethiopia (CBE)',
+      clientType: 'Corporate',
+      contactPerson: 'Ato Biruk Teshome',
+      phone: '+251 911 889 900',
+      email: 'training@cbe.com.et',
+      roomType: 'Standard Single',
+      agreedRate: 2000,
+      mealPlan: 'Half Board (HB)',
+      includedAmenities: ['Breakfast & Dinner Included', 'Free Wi-Fi', 'Gym Access'],
+      discountPercentage: 20,
+      startDate: '2026-03-01',
+      endDate: '2026-09-30',
+      notes: 'Corporate trainee lodging package with dinner and breakfast.',
+      status: 'Active',
+      createdBy: 'Manager',
+    },
+  ];
+
   private guests: Guest[] = [
     { id: 1, fullName: 'Dawit Yohannes', email: 'dawit.y@example.com', phone: '+251 911 223 344', idPassportNumber: 'ETH-849204', idType: 'National ID', nationality: 'Ethiopian', vipStatus: true, totalStays: 5, totalSpent: 42500, notes: 'Prefers high floor rooms' },
     { id: 2, fullName: 'Sarah Jenkins', email: 'sarah.j@travel.com', phone: '+1 415 555 0192', idPassportNumber: 'USA-992014', idType: 'Passport', nationality: 'United States', vipStatus: false, totalStays: 2, totalSpent: 18400, notes: 'Allergic to nuts' },
@@ -81,9 +148,66 @@ class ZemenServeStore {
   ];
 
   private eventHalls: EventHall[] = [
-    { id: 1, name: 'Lalibela Grand Ballroom', capacity: 350, hourlyRate: 5000, dailyRate: 35000, amenities: ['4K Projector', 'Stage & Sound', 'LED Wall', 'VIP Lounge', 'High Speed Wi-Fi'], status: 'Available' },
-    { id: 2, name: 'Axum Executive Conference Hall', capacity: 80, hourlyRate: 2500, dailyRate: 18000, amenities: ['Smart Board', 'Video Conferencing', 'Podium', 'Coffee Station'], status: 'Available' },
-    { id: 3, name: 'Simien Boardroom', capacity: 20, hourlyRate: 1200, dailyRate: 8000, amenities: ['Leather Chairs', '65" OLED Display', 'HDMI Hub', 'Mini Fridge'], status: 'Available' },
+    {
+      id: 1,
+      name: 'Lalibela Grand Ballroom',
+      hallType: 'Grand Ballroom',
+      capacity: 350,
+      hourlyRate: 5000,
+      dailyRate: 35000,
+      location: 'Ground Floor, Main Wing',
+      amenities: ['4K Projector & Screen', 'Stage & Podium', 'LED Video Wall', 'VIP Lounge', 'Surround Sound System', 'High-Speed VIP Wi-Fi'],
+      description: 'Premier grand ballroom with crystal chandeliers, customizable lighting, and integrated banquet staging for galas and large conventions.',
+      status: 'Available',
+    },
+    {
+      id: 2,
+      name: 'Axum Executive Conference Hall',
+      hallType: 'Conference Hall',
+      capacity: 80,
+      hourlyRate: 2500,
+      dailyRate: 18000,
+      location: '1st Floor, Business Center',
+      amenities: ['Smart Digital Whiteboard', 'Video Conferencing (Zoom/Teams)', 'Stage & Podium', 'Dedicated Coffee Station', 'Wireless Microphones'],
+      description: 'High-tech conference hall designed for corporate summits, professional workshops, and executive seminars.',
+      status: 'Available',
+    },
+    {
+      id: 3,
+      name: 'Simien Boardroom',
+      hallType: 'Executive Boardroom',
+      capacity: 20,
+      hourlyRate: 1200,
+      dailyRate: 8000,
+      location: '2nd Floor, Executive Suite Wing',
+      amenities: ['Ergonomic Leather Chairs', '65" 4K OLED Display', 'HDMI/Wireless Screen Share Hub', 'Mini Fridge & Refreshments', 'Soundproof Acoustic Walls'],
+      description: 'Intimate soundproof boardroom ideal for high-level board meetings, confidential negotiations, and VIP summits.',
+      status: 'Available',
+    },
+    {
+      id: 4,
+      name: 'Entoto Garden Pavilion',
+      hallType: 'Outdoor / Garden Pavilion',
+      capacity: 500,
+      hourlyRate: 6000,
+      dailyRate: 45000,
+      location: 'Lakeside Botanical Grounds',
+      amenities: ['Open-air Gazebo', 'Outdoor Ambient Lighting', 'Dedicated Buffet Station', 'Mobile PA Sound System', 'Private Restrooms', 'Generator Backup'],
+      description: 'Scenic open-air garden pavilion surrounded by botanical landscaping, perfect for weddings, cocktail receptions, and evening festivals.',
+      status: 'Available',
+    },
+    {
+      id: 5,
+      name: 'Blue Nile Banquet Hall',
+      hallType: 'Banquet Venue',
+      capacity: 150,
+      hourlyRate: 3000,
+      dailyRate: 22000,
+      location: 'Ground Floor, Restaurant Terrace',
+      amenities: ['Banquet Dining Setup', 'Dedicated Buffet Station', 'Surround Sound System', 'Dance Floor', 'Air Conditioning & Climate Control'],
+      description: 'Versatile celebration and dining hall with built-in buffet staging, ideal for family celebrations, anniversaries, and corporate dinners.',
+      status: 'Available',
+    },
   ];
 
   private eventBookings: EventBooking[] = [
@@ -184,8 +308,9 @@ class ZemenServeStore {
     reservations: 0,
     guests: 0,
     rooms: 0,
+    contracts: 0,
   };
-  private readonly CACHE_TTL_MS = 15000; // 15s in-memory cache TTL
+  private readonly CACHE_TTL_MS = 60000; // 60s in-memory cache TTL for instant responses
 
   public subscribe(listener: () => void) {
     this.listeners.push(listener);
@@ -651,6 +776,30 @@ class ZemenServeStore {
       // Offline fallback
     }
     return [...this.rooms];
+  }
+
+  public async fetchContractsFromDB(force = false): Promise<HotelContract[]> {
+    if (typeof window === 'undefined') return [...this.contracts];
+    const now = Date.now();
+    if (!force && now - this.lastFetchTime.contracts < this.CACHE_TTL_MS) {
+      return [...this.contracts];
+    }
+    try {
+      const res = await fetch('/api/contracts');
+      if (!res.ok) return [...this.contracts];
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.contracts)) {
+          this.contracts = data.contracts;
+          this.lastFetchTime.contracts = now;
+          this.notify();
+        }
+      }
+    } catch {
+      // Offline fallback
+    }
+    return [...this.contracts];
   }
 
   public getIngredients(): Ingredient[] {
@@ -1143,9 +1292,14 @@ class ZemenServeStore {
     totalCogs: number;
     netProfit: number;
     totalOrders: number;
+    roomRevenue: number;
+    foodRevenue: number;
+    otherRevenue: number;
+    totalLodgingBookings: number;
+    roomSales: RoomDailySale[];
     itemsSold: { menuItemId: number; name: string; category: string; quantity: number; revenue: number; cost: number; profit: number }[];
   } {
-    let totalRevenue = 0;
+    let foodRevenue = 0;
     let totalCogs = 0;
     let totalOrders = 0;
 
@@ -1165,7 +1319,7 @@ class ZemenServeStore {
       }
 
       totalOrders++;
-      totalRevenue += order.totalAmount;
+      foodRevenue += order.totalAmount;
 
       for (const item of order.orderItems) {
         const menuItem = this.menuItems.find((m) => m.id === item.menuItemId);
@@ -1203,11 +1357,89 @@ class ZemenServeStore {
       };
     });
 
+    // ==========================================
+    // 1. HOTEL ROOM LODGING REVENUE INTEGRATION
+    // ==========================================
+    let roomRevenue = 0;
+    const roomSales: RoomDailySale[] = [];
+
+    for (const res of this.reservations) {
+      if (res.status === 'Cancelled') continue;
+
+      let matchesDate = false;
+      let billForDate = 0;
+
+      if (!targetDateStr) {
+        // All-Time Cumulative
+        matchesDate = true;
+        billForDate = res.totalAmount;
+      } else {
+        const createdDate = res.createdAt ? new Date(res.createdAt).toISOString().split('T')[0] : '';
+        const isCheckInDay = res.checkInDate === targetDateStr || createdDate === targetDateStr;
+        const isStayingInHouse = res.status === 'Checked-In' && targetDateStr >= res.checkInDate && targetDateStr <= res.checkOutDate;
+
+        if (isCheckInDay) {
+          matchesDate = true;
+          billForDate = res.totalAmount;
+        } else if (isStayingInHouse) {
+          matchesDate = true;
+          billForDate = res.nightlyRate; // Daily night room charge for active stay
+        }
+      }
+
+      if (matchesDate) {
+        roomRevenue += billForDate;
+        const guest = this.guests.find((g) => g.id === res.guestId);
+        roomSales.push({
+          reservationId: res.id,
+          bookingRef: res.bookingRef,
+          roomNumber: res.roomNumber,
+          roomType: res.roomType,
+          guestName: res.guestName,
+          guestPhone: res.guestPhone,
+          idNumber: (res as any).idNumber || (res as any).idPassportNumber || guest?.idPassportNumber || 'N/A',
+          idType: (res as any).idType || guest?.idType || 'National ID (Fayda / FIN)',
+          checkInDate: res.checkInDate,
+          checkOutDate: res.checkOutDate,
+          nights: res.nights,
+          rate: res.nightlyRate,
+          total: billForDate,
+          depositPaid: res.depositPaid,
+          balanceDue: Math.max(0, res.totalAmount - res.depositPaid),
+          mealPlan: res.mealPlan || 'Room Only',
+          paymentStatus: res.paymentStatus,
+          status: res.status,
+        });
+      }
+    }
+
+    // ==========================================
+    // 2. OTHER FOLIO CHARGES (Spa, Laundry, Minibar)
+    // ==========================================
+    let otherRevenue = 0;
+    for (const tx of this.folioTransactions) {
+      if (tx.type !== 'Debit') continue;
+      if (tx.category === 'Room Charge' || tx.category === 'Restaurant POS' || tx.category === 'Payment Deposit') continue;
+      if (targetDateStr) {
+        const txDate = new Date(tx.timestamp).toISOString().split('T')[0];
+        if (txDate !== targetDateStr) continue;
+      }
+      otherRevenue += tx.amount;
+    }
+
+    const totalRevenue = foodRevenue + roomRevenue + otherRevenue;
+    const netProfit = totalRevenue - totalCogs;
+
     return {
       totalRevenue,
       totalCogs,
-      netProfit: totalRevenue - totalCogs,
+      netProfit,
       totalOrders,
+      roomRevenue,
+      foodRevenue,
+      otherRevenue,
+      totalLodgingBookings: roomSales.length,
+      roomSales: roomSales.sort((a, b) => b.total - a.total),
       itemsSold: itemsSold.sort((a, b) => b.quantity - a.quantity),
     };
   }
@@ -1250,7 +1482,170 @@ class ZemenServeStore {
     this.rooms.push(newRoom);
     this.logAudit('Admin', 'Add Room', `Added Room #${newRoom.roomNumber} (${newRoom.type})`);
     this.notify();
+
+    if (typeof window !== 'undefined') {
+      fetch('/api/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(roomData),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.success) this.fetchRoomsFromDB(true);
+        })
+        .catch(() => {});
+    }
+
     return newRoom;
+  }
+
+  public async addRoomAsync(roomData: Omit<Room, 'id'>): Promise<{ success: boolean; room?: Room; error?: string }> {
+    try {
+      const res = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(roomData),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, error: data.error || 'Failed to create room' };
+      }
+      await this.fetchRoomsFromDB(true);
+      this.logAudit('Admin', 'Add Room', `Added Room #${data.room?.roomNumber} (${data.room?.type})`);
+      return { success: true, room: data.room };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  public async batchAddRoomsAsync(batchData: {
+    type: string;
+    floor: number;
+    pricePerNight: number;
+    capacity: number;
+    amenities: string[];
+    quantity: number;
+    startNumber: number;
+  }): Promise<{ success: boolean; count?: number; rooms?: Room[]; error?: string }> {
+    try {
+      const res = await fetch('/api/rooms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isBatch: true, ...batchData }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, error: data.error || 'Failed to batch generate rooms' };
+      }
+      await this.fetchRoomsFromDB(true);
+      this.logAudit('Admin', 'Batch Add Rooms', `Created ${data.count} ${batchData.type} rooms`);
+      return { success: true, count: data.count, rooms: data.rooms };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  public async updateRoomAsync(roomId: number, updateData: Partial<Room>): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch('/api/rooms', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: roomId, ...updateData }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, error: data.error || 'Failed to update room' };
+      }
+      await this.fetchRoomsFromDB(true);
+      this.logAudit('Admin', 'Update Room', `Updated Room ID ${roomId}`);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  public async deleteRoomAsync(roomId: number): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch(`/api/rooms?id=${roomId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, error: data.error || 'Failed to delete room' };
+      }
+      await this.fetchRoomsFromDB(true);
+      this.logAudit('Admin', 'Delete Room', `Deleted Room ID ${roomId}`);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  // ==========================================
+  // HMS CONTRACTS & CORPORATE RATES METHODS
+  // ==========================================
+  public getContracts(): HotelContract[] {
+    return [...this.contracts];
+  }
+
+  public async addContractAsync(
+    contractData: Omit<HotelContract, 'id'>
+  ): Promise<{ success: boolean; contract?: HotelContract; error?: string }> {
+    try {
+      const res = await fetch('/api/contracts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(contractData),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, error: data.error || 'Failed to create corporate contract' };
+      }
+      await this.fetchContractsFromDB(true);
+      this.logAudit('Manager', 'Create Contract', `Created Contract: ${data.contract?.name} (${data.contract?.clientName})`);
+      return { success: true, contract: data.contract };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  public async updateContractAsync(
+    id: number,
+    updateData: Partial<HotelContract>
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch('/api/contracts', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...updateData }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, error: data.error || 'Failed to update contract' };
+      }
+      await this.fetchContractsFromDB(true);
+      this.logAudit('Manager', 'Update Contract', `Updated Contract ID ${id}`);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  public async deleteContractAsync(id: number): Promise<{ success: boolean; error?: string }> {
+    try {
+      const res = await fetch(`/api/contracts?id=${id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        return { success: false, error: data.error || 'Failed to delete contract' };
+      }
+      await this.fetchContractsFromDB(true);
+      this.logAudit('Manager', 'Delete Contract', `Deleted Contract ID ${id}`);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
   }
 
   // ==========================================
@@ -1306,6 +1701,12 @@ class ZemenServeStore {
     if (room && newReservation.status === 'Checked-In') {
       room.status = 'Occupied';
       room.currentGuestName = newReservation.guestName;
+      room.currentGuestPhone = newReservation.guestPhone;
+      room.currentGuestIdNumber = newReservation.idNumber;
+      room.currentGuestIdType = newReservation.idType;
+      room.currentIdImageUrl = newReservation.idImageUrl;
+      room.currentCheckIn = newReservation.checkInDate;
+      room.currentCheckOut = newReservation.checkOutDate;
       room.currentReservationId = newReservation.id;
     }
 
@@ -1390,6 +1791,12 @@ class ZemenServeStore {
       if (room) {
         room.status = 'Occupied';
         room.currentGuestName = res.guestName;
+        room.currentGuestPhone = res.guestPhone;
+        room.currentGuestIdNumber = res.idNumber;
+        room.currentGuestIdType = res.idType;
+        room.currentIdImageUrl = res.idImageUrl;
+        room.currentCheckIn = res.checkInDate;
+        room.currentCheckOut = res.checkOutDate;
         room.currentReservationId = res.id;
       }
       this.logAudit('Front Desk', 'Guest Check-In', `Checked in ${res.guestName} to Room ${res.roomNumber}`);
@@ -1419,19 +1826,17 @@ class ZemenServeStore {
       res.status = 'Checked-Out';
       const room = this.rooms.find((r) => r.id === res.roomId || r.roomNumber === res.roomNumber);
       if (room) {
-        room.status = 'Dirty';
+        // Per spec: room becomes Available (Clean) after checkout so reception can reassign it.
+        // Housekeeping tasks are managed separately in the Housekeeping module.
+        room.status = 'Clean';
         room.currentGuestName = undefined;
+        room.currentGuestPhone = undefined;
+        room.currentGuestIdNumber = undefined;
+        room.currentGuestIdType = undefined;
+        room.currentIdImageUrl = undefined;
+        room.currentCheckIn = undefined;
+        room.currentCheckOut = undefined;
         room.currentReservationId = undefined;
-
-        // Auto-assign housekeeping cleanup task
-        this.addHousekeepingTask({
-          roomNumber: room.roomNumber,
-          taskType: 'Full Clean',
-          priority: 'Urgent',
-          assignedStaff: 'Housekeeping Staff',
-          status: 'Pending',
-          notes: `Post checkout cleaning for Room ${room.roomNumber}`,
-        });
       }
       this.logAudit('Front Desk', 'Guest Check-Out', `Checked out ${res.guestName} from Room ${res.roomNumber}`);
       this.notify();
@@ -1441,6 +1846,43 @@ class ZemenServeStore {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: res.id, status: 'Checked-Out' }),
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.success) {
+              this.fetchReservationsFromDB(true);
+              this.fetchRoomsFromDB(true);
+            }
+          })
+          .catch(() => {});
+      }
+    }
+  }
+
+  public cancelReservation(resId: number): void {
+    const res = this.reservations.find((r) => r.id === resId);
+    if (res) {
+      res.status = 'Cancelled';
+      const room = this.rooms.find((r) => r.id === res.roomId || r.roomNumber === res.roomNumber);
+      if (room && room.currentReservationId === res.id) {
+        room.status = 'Clean';
+        room.currentGuestName = undefined;
+        room.currentGuestPhone = undefined;
+        room.currentGuestIdNumber = undefined;
+        room.currentGuestIdType = undefined;
+        room.currentIdImageUrl = undefined;
+        room.currentCheckIn = undefined;
+        room.currentCheckOut = undefined;
+        room.currentReservationId = undefined;
+      }
+      this.logAudit('Front Desk', 'Cancel Reservation', `Cancelled booking ${res.bookingRef} for ${res.guestName}`);
+      this.notify();
+
+      if (typeof window !== 'undefined') {
+        fetch('/api/reservations', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: res.id, status: 'Cancelled' }),
         })
           .then((r) => r.json())
           .then((data) => {
@@ -1538,6 +1980,50 @@ class ZemenServeStore {
   // ==========================================
   public getEventHalls(): EventHall[] {
     return [...this.eventHalls];
+  }
+
+  public async fetchEventHallsFromDB(force = false): Promise<EventHall[]> {
+    if (typeof window === 'undefined') return this.eventHalls;
+    try {
+      const res = await fetch('/api/events/halls');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.halls)) {
+        this.eventHalls = data.halls;
+        this.notify();
+      }
+    } catch {}
+    return this.eventHalls;
+  }
+
+  public addEventHall(hallData: Omit<EventHall, 'id' | 'createdAt'>): EventHall {
+    const newId = this.eventHalls.length > 0 ? Math.max(...this.eventHalls.map((h) => h.id)) + 1 : 1;
+    const newHall: EventHall = {
+      ...hallData,
+      id: newId,
+      createdAt: new Date().toISOString(),
+    };
+    this.eventHalls.push(newHall);
+    this.logAudit('Events', 'Create Hall', `Created venue "${newHall.name}" (${newHall.hallType}, ${newHall.capacity} pax)`);
+    this.notify();
+    return newHall;
+  }
+
+  public updateEventHall(id: number, updates: Partial<EventHall>): EventHall | null {
+    const hallIndex = this.eventHalls.findIndex((h) => h.id === id);
+    if (hallIndex === -1) return null;
+    this.eventHalls[hallIndex] = { ...this.eventHalls[hallIndex], ...updates };
+    this.logAudit('Events', 'Update Hall', `Updated venue #${id} "${this.eventHalls[hallIndex].name}"`);
+    this.notify();
+    return this.eventHalls[hallIndex];
+  }
+
+  public deleteEventHall(id: number): boolean {
+    const hall = this.eventHalls.find((h) => h.id === id);
+    if (!hall) return false;
+    this.eventHalls = this.eventHalls.filter((h) => h.id !== id);
+    this.logAudit('Events', 'Delete Hall', `Deleted venue "${hall.name}" (#${id})`);
+    this.notify();
+    return true;
   }
 
   public getEventBookings(): EventBooking[] {

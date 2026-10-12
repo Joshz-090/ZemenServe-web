@@ -7,6 +7,8 @@ export interface IGuest extends Document {
   phone: string;
   idPassportNumber: string;
   idType: string;
+  dateOfBirth?: string;
+  idImageUrl?: string;
   nationality: string;
   vipStatus: boolean;
   totalStays: number;
@@ -23,7 +25,9 @@ const GuestSchema: Schema = new Schema(
     email: { type: String, required: true },
     phone: { type: String, required: true },
     idPassportNumber: { type: String, required: true },
-    idType: { type: String, default: 'National ID' },
+    idType: { type: String, default: 'National ID (Fayda / FIN)' },
+    dateOfBirth: { type: String },
+    idImageUrl: { type: String },
     nationality: { type: String, default: 'Ethiopia' },
     vipStatus: { type: Boolean, default: false },
     totalStays: { type: Number, default: 0 },

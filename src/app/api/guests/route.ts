@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
       phone: g.phone,
       idPassportNumber: g.idPassportNumber,
       idType: g.idType,
+      idImageUrl: g.idImageUrl,
       nationality: g.nationality,
       vipStatus: g.vipStatus,
       totalStays: g.totalStays,
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
 
     await connectToDatabase();
     const body = await req.json();
-    const { fullName, email, phone, idPassportNumber, idType, nationality, vipStatus, notes } = body;
+    const { fullName, email, phone, idPassportNumber, idType, idImageUrl, nationality, vipStatus, notes } = body;
 
     if (!fullName || !phone || !idPassportNumber) {
       return NextResponse.json({ success: false, error: 'Full name, phone, and ID/Passport number are required' }, { status: 400 });
@@ -67,7 +68,8 @@ export async function POST(req: NextRequest) {
       email: email || '',
       phone,
       idPassportNumber,
-      idType: idType || 'National ID',
+      idType: idType || 'National ID (Fayda / FIN)',
+      idImageUrl: idImageUrl || undefined,
       nationality: nationality || 'Ethiopian',
       vipStatus: Boolean(vipStatus),
       totalStays: 0,
@@ -84,6 +86,7 @@ export async function POST(req: NextRequest) {
         phone: newGuest.phone,
         idPassportNumber: newGuest.idPassportNumber,
         idType: newGuest.idType,
+        idImageUrl: newGuest.idImageUrl,
         nationality: newGuest.nationality,
         vipStatus: newGuest.vipStatus,
         totalStays: newGuest.totalStays,
@@ -104,7 +107,7 @@ export async function PUT(req: NextRequest) {
 
     await connectToDatabase();
     const body = await req.json();
-    const { id, fullName, email, phone, idPassportNumber, idType, nationality, vipStatus, notes } = body;
+    const { id, fullName, email, phone, idPassportNumber, idType, idImageUrl, nationality, vipStatus, notes } = body;
 
     if (!id) return NextResponse.json({ success: false, error: 'Guest ID is required' }, { status: 400 });
 
@@ -116,6 +119,7 @@ export async function PUT(req: NextRequest) {
     if (phone) guest.phone = phone;
     if (idPassportNumber) guest.idPassportNumber = idPassportNumber;
     if (idType) guest.idType = idType;
+    if (idImageUrl !== undefined) guest.idImageUrl = idImageUrl;
     if (nationality) guest.nationality = nationality;
     if (vipStatus !== undefined) guest.vipStatus = Boolean(vipStatus);
     if (notes !== undefined) guest.notes = notes;

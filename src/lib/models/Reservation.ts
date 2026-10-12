@@ -6,6 +6,12 @@ export interface IReservation extends Document {
   guestId: number;
   guestName: string;
   guestPhone: string;
+  guestEmail?: string;
+  idPassportNumber?: string;
+  idType?: string;
+  idImageUrl?: string;
+  dateOfBirth?: string;
+  nationality?: string;
   roomId: number;
   roomNumber: string;
   roomType: string;
@@ -20,6 +26,9 @@ export interface IReservation extends Document {
   depositPaid: number;
   paymentStatus: string;
   specialRequests?: string;
+  contractId?: number;
+  contractName?: string;
+  mealPlan?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,6 +40,12 @@ const ReservationSchema: Schema = new Schema(
     guestId: { type: Number, required: true },
     guestName: { type: String, required: true },
     guestPhone: { type: String, required: true },
+    guestEmail: { type: String },
+    idPassportNumber: { type: String },
+    idType: { type: String, default: 'National ID (Fayda / FIN)' },
+    idImageUrl: { type: String },
+    dateOfBirth: { type: String },
+    nationality: { type: String },
     roomId: { type: Number, required: true },
     roomNumber: { type: String, required: true },
     roomType: { type: String, required: true },
@@ -45,6 +60,9 @@ const ReservationSchema: Schema = new Schema(
     depositPaid: { type: Number, default: 0 },
     paymentStatus: { type: String, default: 'Pending' },
     specialRequests: { type: String, default: '' },
+    contractId: { type: Number },
+    contractName: { type: String },
+    mealPlan: { type: String, default: 'Room Only' },
   },
   { timestamps: true }
 );

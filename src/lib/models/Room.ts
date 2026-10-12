@@ -11,6 +11,12 @@ export interface IRoom extends Document {
   status: RoomStatus;
   amenities: string[];
   currentGuestName?: string;
+  currentGuestPhone?: string;
+  currentGuestIdNumber?: string;
+  currentGuestIdType?: string;
+  currentIdImageUrl?: string;
+  currentCheckIn?: string;
+  currentCheckOut?: string;
   currentReservationId?: number;
   createdAt: Date;
   updatedAt: Date;
@@ -27,6 +33,12 @@ const RoomSchema: Schema = new Schema(
     status: { type: String, required: true, default: 'Clean' },
     amenities: [{ type: String }],
     currentGuestName: { type: String },
+    currentGuestPhone: { type: String },
+    currentGuestIdNumber: { type: String },
+    currentGuestIdType: { type: String },
+    currentIdImageUrl: { type: String },
+    currentCheckIn: { type: String },
+    currentCheckOut: { type: String },
     currentReservationId: { type: Number },
   },
   { timestamps: true }

@@ -64,6 +64,91 @@ const setCachedUser = (user: any) => {
   }
 };
 
+interface SidebarNavItemProps {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  active: boolean;
+  isExpanded: boolean;
+  badge?: React.ReactNode;
+  badgeDot?: boolean;
+  onNavigate: () => void;
+}
+
+function SidebarNavItem({
+  href,
+  label,
+  icon: Icon,
+  active,
+  isExpanded,
+  badge,
+  badgeDot,
+  onNavigate,
+}: SidebarNavItemProps) {
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      title={!isExpanded ? label : undefined}
+      className={`group/item relative h-10 w-full rounded-xl text-xs font-bold transition-all duration-200 flex items-center px-2.5 overflow-hidden ${
+        active
+          ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md shadow-amber-500/20 font-black'
+          : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
+      }`}
+    >
+      {/* Fixed Icon Container - Never shifts, never resizes */}
+      <div className="relative w-6 h-6 flex items-center justify-center shrink-0">
+        <Icon className="w-4 h-4 shrink-0 transition-transform duration-200 group-hover/item:scale-110" />
+        {badgeDot && !isExpanded && (
+          <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-slate-950 animate-pulse" />
+        )}
+      </div>
+
+      {/* Label Text - Smooth sliding and fade-in without wrapping */}
+      <span
+        className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
+          isExpanded
+            ? 'max-w-44 opacity-100 ml-3 translate-x-0'
+            : 'max-w-0 opacity-0 ml-0 -translate-x-2 pointer-events-none'
+        }`}
+      >
+        {label}
+      </span>
+
+      {/* Trailing Badge or Active Indicator */}
+      <div
+        className={`ml-auto shrink-0 flex items-center overflow-hidden transition-all duration-300 ease-in-out ${
+          isExpanded
+            ? 'max-w-16 opacity-100 translate-x-0'
+            : 'max-w-0 opacity-0 translate-x-2 pointer-events-none'
+        }`}
+      >
+        {badge ? (
+          badge
+        ) : active ? (
+          <ChevronRight className="w-4 h-4 opacity-70 shrink-0" />
+        ) : null}
+      </div>
+    </Link>
+  );
+}
+
+function SidebarSectionHeader({ title, isExpanded }: { title: string; isExpanded: boolean }) {
+  return (
+    <div className="pt-2 pb-1 overflow-hidden">
+      <div
+        className={`whitespace-nowrap transition-all duration-300 ease-in-out ${
+          isExpanded
+            ? 'max-w-48 opacity-100 px-3 text-[10px] font-black uppercase tracking-widest text-slate-500'
+            : 'max-w-full opacity-100 mx-2 border-t border-slate-800/80'
+        }`}
+      >
+        {isExpanded ? title : null}
+      </div>
+    </div>
+  );
+}
+
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -74,9 +159,28 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [pendingOrdersCount, setPendingOrdersCount] = useState<number>(0);
   const [lowStockCount, setLowStockCount] = useState<number>(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [isSidebarHovered, setIsSidebarHovered] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isExpanded = isMobile ? isSidebarOpen : isSidebarHovered;
 
   // Check active session on mount
   useEffect(() => {
+    const cached = getCachedUser();
+    if (cached) {
+      setCurrentUser(cached);
+      setAuthLoading(false);
+    }
+
     const checkAuth = async () => {
       try {
         const res = await fetch('/api/auth/me');
@@ -177,15 +281,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   useEffect(() => {
     if (!authLoading && currentUser) {
       const role = currentUser.role;
-      if (role === 'Receptionist') {
-        const allowed = ['/reception', '/reservations', '/housekeeping', '/events'];
+      if (role === 'Admin' || role === 'Manager') {
+        if (pathname === '/') {
+          router.replace('/admin');
+        }
+      } else if (role === 'Receptionist') {
+        const allowed = ['/reception', '/reservations', '/events'];
         if (!allowed.includes(pathname)) {
           router.replace('/reception');
         }
       } else if (role === 'Housekeeper') {
-        const allowed = ['/housekeeping'];
+        const allowed = ['/reception'];
         if (!allowed.includes(pathname)) {
-          router.replace('/housekeeping');
+          router.replace('/reception');
         }
       } else if (role === 'Accountant') {
         const allowed = ['/finance', '/daily-report', '/reports', '/orders'];
@@ -236,9 +344,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           setCachedUser(user);
           setCurrentUser(user);
           if (user.role === 'Admin' || user.role === 'Manager') router.push('/admin');
+          else if (user.role === 'Cashier') router.push('/pos');
           else if (user.role === 'Chef') router.push('/kitchen');
           else if (user.role === 'Waiter') router.push('/waiters');
-          else if (user.role === 'Receptionist' || user.role === 'Housekeeper') router.push('/reception');
+          else if (user.role === 'Housekeeper') router.push('/reception');
+          else if (user.role === 'Receptionist') router.push('/reception');
           else if (user.role === 'Accountant') router.push('/finance');
           else router.push('/admin');
         }}
@@ -283,340 +393,270 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </button>
       </div>
 
-      {/* Persistent Sidebar Navigation */}
+      {/* Desktop Spacer so page layout stays anchored and never shifts */}
+      <div className="hidden lg:block w-[72px] shrink-0" />
+
+      {/* Persistent Mini/Expanded Sidebar */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 bottom-0 z-40 w-72 h-screen bg-slate-950/95 backdrop-blur-2xl border-r border-amber-500/15 flex flex-col transition-all duration-300 ${
+        onMouseEnter={() => setIsSidebarHovered(true)}
+        onMouseLeave={() => setIsSidebarHovered(false)}
+        className={`fixed top-0 left-0 bottom-0 z-40 h-screen bg-slate-950/95 backdrop-blur-2xl border-r border-amber-500/15 flex flex-col transition-all duration-300 ease-in-out ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        } ${
+          isExpanded
+            ? 'w-72 shadow-2xl shadow-black/90 border-r-amber-500/30'
+            : 'w-72 lg:w-[72px]'
         } ${isSidebarOpen ? 'pt-16 lg:pt-0' : ''}`}
       >
         {/* SIDEBAR HEADER */}
-        <div className="p-5 border-b border-slate-800/80 bg-gradient-to-b from-slate-900/40 to-transparent">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl shadow-lg shadow-amber-500/25 text-slate-950 font-black">
-              <Flame className="w-7 h-7 fill-current" />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h1 className="text-xl font-black tracking-tight text-slate-100">
-                  Zemen<span className="text-amber-400">Serve</span>
-                </h1>
-                <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                  v2.0
-                </span>
-              </div>
-              <p className="text-xs text-amber-400/90 font-bold tracking-wide flex items-center gap-1 mt-0.5">
-                <Sparkles className="w-3 h-3" /> Production Web App
-              </p>
-            </div>
+        <div className="h-16 px-3 border-b border-slate-800/80 bg-gradient-to-b from-slate-900/40 to-transparent flex items-center overflow-hidden shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 shadow-md shadow-amber-500/20 text-slate-950 font-black flex items-center justify-center shrink-0">
+            <Flame className="w-5 h-5 fill-current" />
           </div>
+          <div
+            className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out ${
+              isExpanded
+                ? 'max-w-48 opacity-100 ml-3 translate-x-0'
+                : 'max-w-0 opacity-0 ml-0 -translate-x-2 pointer-events-none'
+            }`}
+          >
+            <div className="flex items-center gap-1.5">
+              <h1 className="text-base font-black tracking-tight text-slate-100">
+                Zemen<span className="text-amber-400">Serve</span>
+              </h1>
+              <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                v2.0
+              </span>
+            </div>
+            <p className="text-[10px] text-amber-400/90 font-bold tracking-wide flex items-center gap-1 mt-0.5">
+              <Sparkles className="w-3 h-3" /> Hotel ERP System
+            </p>
+          </div>
+        </div>
 
-          {/* System Date & Time Status Card */}
-          <div className="mt-4 p-2.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs font-sans">
-            <div className="flex items-center gap-2.5 text-amber-400">
-              <Clock className="w-4 h-4 text-amber-400 shrink-0" />
-              <div className="flex flex-col">
+        {/* System Date & Time Status Bar */}
+        <div className="px-2.5 pt-3 pb-1 shrink-0">
+          <div
+            className={`rounded-xl border border-slate-800/80 bg-slate-900/60 transition-all duration-300 ease-in-out overflow-hidden flex items-center ${
+              isExpanded ? 'h-11 px-2.5 justify-between' : 'h-9 px-0 justify-center'
+            }`}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-6 h-6 flex items-center justify-center shrink-0 text-amber-400">
+                <Clock className="w-4 h-4 shrink-0" />
+              </div>
+              <div
+                className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out flex flex-col ${
+                  isExpanded
+                    ? 'max-w-36 opacity-100 translate-x-0'
+                    : 'max-w-0 opacity-0 -translate-x-2 pointer-events-none'
+                }`}
+              >
                 <span className="text-[11px] font-bold text-slate-200 leading-tight">{timeStr || '--:--:--'}</span>
-                <span className="text-[9px] text-slate-400 font-medium leading-tight">{dateStr || 'Loading date...'}</span>
+                <span className="text-[9px] text-slate-400 font-medium leading-tight">{dateStr || 'System Time'}</span>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Live System</span>
+
+            <div
+              className={`shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
+                isExpanded ? 'max-w-16 opacity-100' : 'max-w-0 opacity-0 pointer-events-none'
+              }`}
+            >
+              <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-bold text-emerald-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Live</span>
+              </div>
             </div>
           </div>
         </div>
 
         {/* NAVIGATION ITEMS */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6 no-scrollbar">
+        <div className="flex-1 overflow-y-auto px-2.5 py-2 space-y-4 no-scrollbar">
           {/* Executive Console (Visible to Admin & Manager) */}
           {(currentUser?.role === 'Admin' || currentUser?.role === 'Manager') && (
             <div>
-              <div className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-amber-400/90 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                <span>Executive Management</span>
-              </div>
+              <SidebarSectionHeader title="Executive Management" isExpanded={isExpanded} />
               <nav className="space-y-1">
-                <Link
+                <SidebarNavItem
                   href="/admin"
-                  onClick={closeSidebarOnMobile}
-                  className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between border ${
-                    isCurrent('/admin')
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/20 font-black'
-                      : 'text-amber-300 bg-amber-500/10 border-amber-500/20 hover:bg-amber-500/20'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <ShieldCheck className="w-4 h-4 text-amber-400" />
-                    <span>Admin Dashboard</span>
-                  </div>
-                  {isCurrent('/admin') && <ChevronRight className="w-4 h-4 opacity-70" />}
-                </Link>
+                  label="Admin Dashboard"
+                  icon={ShieldCheck}
+                  active={isCurrent('/admin')}
+                  isExpanded={isExpanded}
+                  onNavigate={closeSidebarOnMobile}
+                />
               </nav>
             </div>
           )}
 
           {/* Front Office & Rooms */}
           <div>
-            <div className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
-              Front Office & Rooms
-            </div>
+            <SidebarSectionHeader title="Front Office & Rooms" isExpanded={isExpanded} />
             <nav className="space-y-1">
-              <Link
+              <SidebarNavItem
                 href="/reception"
-                onClick={closeSidebarOnMobile}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                  isCurrent('/reception')
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Key className="w-4 h-4 text-amber-400" />
-                  <span>Reception Desk</span>
-                </div>
-                {isCurrent('/reception') && <ChevronRight className="w-4 h-4 opacity-70" />}
-              </Link>
-
-              <Link
+                label="Reception Desk"
+                icon={Key}
+                active={isCurrent('/reception')}
+                isExpanded={isExpanded}
+                onNavigate={closeSidebarOnMobile}
+              />
+              <SidebarNavItem
                 href="/reservations"
-                onClick={closeSidebarOnMobile}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                  isCurrent('/reservations')
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-4 h-4" />
-                  <span>Reservations Grid</span>
-                </div>
-                {isCurrent('/reservations') && <ChevronRight className="w-4 h-4 opacity-70" />}
-              </Link>
-
-              <Link
-                href="/housekeeping"
-                onClick={closeSidebarOnMobile}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                  isCurrent('/housekeeping')
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Sparkles className="w-4 h-4" />
-                  <span>Housekeeping Board</span>
-                </div>
-                {isCurrent('/housekeeping') && <ChevronRight className="w-4 h-4 opacity-70" />}
-              </Link>
+                label="Reservations Grid"
+                icon={Calendar}
+                active={isCurrent('/reservations')}
+                isExpanded={isExpanded}
+                onNavigate={closeSidebarOnMobile}
+              />
             </nav>
           </div>
 
           {/* Restaurant & Bar POS */}
           <div>
-            <div className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
-              Restaurant & Dining POS
-            </div>
+            <SidebarSectionHeader title="Restaurant & Dining POS" isExpanded={isExpanded} />
             <nav className="space-y-1">
-              <Link
+              <SidebarNavItem
                 href="/pos"
-                onClick={closeSidebarOnMobile}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                  isCurrent('/pos')
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <ShoppingBag className="w-4 h-4" />
-                  <span>Cashier POS</span>
-                </div>
-                {isCurrent('/pos') && <ChevronRight className="w-4 h-4 opacity-70" />}
-              </Link>
-
-              <Link
+                label="Cashier POS"
+                icon={ShoppingBag}
+                active={isCurrent('/pos')}
+                isExpanded={isExpanded}
+                onNavigate={closeSidebarOnMobile}
+              />
+              <SidebarNavItem
                 href="/kitchen"
-                onClick={closeSidebarOnMobile}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                  isCurrent('/kitchen') || isCurrent('/kds')
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <ChefHat className="w-4 h-4 text-amber-400" />
-                  <span>Kitchen Display (KDS)</span>
-                </div>
-                {pendingOrdersCount > 0 ? (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] bg-rose-500 text-white font-black animate-pulse">
-                    {pendingOrdersCount}
-                  </span>
-                ) : (
-                  (isCurrent('/kitchen') || isCurrent('/kds')) && <ChevronRight className="w-4 h-4 opacity-70" />
-                )}
-              </Link>
-
-              <Link
+                label="Kitchen Display (KDS)"
+                icon={ChefHat}
+                active={isCurrent('/kitchen') || isCurrent('/kds')}
+                isExpanded={isExpanded}
+                badge={
+                  pendingOrdersCount > 0 ? (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] bg-rose-500 text-white font-black animate-pulse">
+                      {pendingOrdersCount}
+                    </span>
+                  ) : undefined
+                }
+                badgeDot={pendingOrdersCount > 0}
+                onNavigate={closeSidebarOnMobile}
+              />
+              <SidebarNavItem
                 href="/menu"
-                onClick={closeSidebarOnMobile}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                  isCurrent('/menu')
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Utensils className="w-4 h-4" />
-                  <span>Digital Menu</span>
-                </div>
-                {isCurrent('/menu') && <ChevronRight className="w-4 h-4 opacity-70" />}
-              </Link>
-
-              <Link
+                label="Digital Menu"
+                icon={Utensils}
+                active={isCurrent('/menu')}
+                isExpanded={isExpanded}
+                onNavigate={closeSidebarOnMobile}
+              />
+              <SidebarNavItem
                 href="/orders"
-                onClick={closeSidebarOnMobile}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                  isCurrent('/orders')
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Receipt className="w-4 h-4" />
-                  <span>Orders Log</span>
-                </div>
-                {isCurrent('/orders') && <ChevronRight className="w-4 h-4 opacity-70" />}
-              </Link>
+                label="Orders Log"
+                icon={Receipt}
+                active={isCurrent('/orders')}
+                isExpanded={isExpanded}
+                onNavigate={closeSidebarOnMobile}
+              />
             </nav>
           </div>
 
           {/* Hotel ERP & Management */}
           <div>
-            <div className="px-3 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
-              Hotel ERP & Management
-            </div>
+            <SidebarSectionHeader title="Hotel ERP & Management" isExpanded={isExpanded} />
             <nav className="space-y-1">
-              <Link
+              <SidebarNavItem
                 href="/finance"
-                onClick={closeSidebarOnMobile}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                  isCurrent('/finance')
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <DollarSign className="w-4 h-4 text-emerald-400" />
-                  <span>Finance & Ledger</span>
-                </div>
-                {isCurrent('/finance') && <ChevronRight className="w-4 h-4 opacity-70" />}
-              </Link>
-
-              <Link
+                label="Finance & Ledger"
+                icon={DollarSign}
+                active={isCurrent('/finance')}
+                isExpanded={isExpanded}
+                onNavigate={closeSidebarOnMobile}
+              />
+              <SidebarNavItem
                 href="/events"
-                onClick={closeSidebarOnMobile}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                  isCurrent('/events')
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Building className="w-4 h-4" />
-                  <span>Events & Halls</span>
-                </div>
-                {isCurrent('/events') && <ChevronRight className="w-4 h-4 opacity-70" />}
-              </Link>
-
-              <Link
+                label="Events & Halls"
+                icon={Building}
+                active={isCurrent('/events')}
+                isExpanded={isExpanded}
+                onNavigate={closeSidebarOnMobile}
+              />
+              <SidebarNavItem
                 href="/hr"
-                onClick={closeSidebarOnMobile}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                  isCurrent('/hr')
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Users className="w-4 h-4" />
-                  <span>Staff & HR</span>
-                </div>
-                {isCurrent('/hr') && <ChevronRight className="w-4 h-4 opacity-70" />}
-              </Link>
-
-              <Link
+                label="Staff & HR"
+                icon={Users}
+                active={isCurrent('/hr')}
+                isExpanded={isExpanded}
+                onNavigate={closeSidebarOnMobile}
+              />
+              <SidebarNavItem
                 href="/inventory"
-                onClick={closeSidebarOnMobile}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                  isCurrent('/inventory')
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Package className="w-4 h-4" />
-                  <span>Inventory Stock</span>
-                </div>
-                {lowStockCount > 0 && (
-                  <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                )}
-              </Link>
-
-              <Link
+                label="Inventory Stock"
+                icon={Package}
+                active={isCurrent('/inventory')}
+                isExpanded={isExpanded}
+                badge={
+                  lowStockCount > 0 ? (
+                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                  ) : undefined
+                }
+                badgeDot={lowStockCount > 0}
+                onNavigate={closeSidebarOnMobile}
+              />
+              <SidebarNavItem
                 href="/daily-report"
-                onClick={closeSidebarOnMobile}
-                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                  isCurrent('/daily-report') || isCurrent('/reports')
-                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                    : 'text-slate-300 hover:text-slate-100 hover:bg-slate-900/80 border border-transparent hover:border-slate-800'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <BarChart3 className="w-4 h-4" />
-                  <span>Daily Reports</span>
-                </div>
-                {(isCurrent('/daily-report') || isCurrent('/reports')) && <ChevronRight className="w-4 h-4 opacity-70" />}
-              </Link>
-
-              {(currentUser?.role === 'Admin' || currentUser?.role === 'Manager') && (
-                <Link
-                  href="/admin"
-                  onClick={closeSidebarOnMobile}
-                  className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between border ${
-                    isCurrent('/admin')
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 border-amber-400 shadow-lg shadow-amber-500/20 font-black'
-                      : 'text-amber-400/90 border-amber-500/20 hover:bg-amber-500/10'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <ShieldCheck className="w-4 h-4" />
-                    <span>Admin Control</span>
-                  </div>
-                </Link>
-              )}
+                label="Daily Reports"
+                icon={BarChart3}
+                active={isCurrent('/daily-report') || isCurrent('/reports')}
+                isExpanded={isExpanded}
+                onNavigate={closeSidebarOnMobile}
+              />
             </nav>
           </div>
         </div>
 
         {/* LOGGED IN USER PROFILE */}
-        <div className="p-3 border-t border-slate-800/80 bg-slate-900/50">
-          {/* User Badge */}
-          <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold text-xs flex items-center justify-center shrink-0">
+        <div className="p-2.5 border-t border-slate-800/80 bg-slate-900/50 shrink-0">
+          <div
+            className={`rounded-2xl bg-slate-900 border border-slate-800 flex items-center transition-all duration-300 ease-in-out overflow-hidden ${
+              isExpanded ? 'h-14 px-2.5 justify-between' : 'h-11 px-0 justify-center'
+            }`}
+          >
+            {/* User Avatar & Info */}
+            <div className="flex items-center min-w-0">
+              <div
+                className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold text-xs flex items-center justify-center shrink-0"
+                title={!isExpanded ? `${currentUser?.name || 'User'} (${currentUser?.role || 'Staff'})` : undefined}
+              >
                 {currentUser?.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
               </div>
-              <div className="truncate">
+
+              <div
+                className={`whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out flex flex-col ${
+                  isExpanded
+                    ? 'max-w-36 opacity-100 ml-2.5 translate-x-0'
+                    : 'max-w-0 opacity-0 ml-0 -translate-x-2 pointer-events-none'
+                }`}
+              >
                 <p className="text-xs font-bold text-slate-100 truncate">{currentUser?.name || 'User'}</p>
-                <p className="text-[10px] text-amber-400 font-medium truncate">{currentUser?.role || 'Staff'} • @{currentUser?.username || 'user'}</p>
+                <p className="text-[10px] text-amber-400 font-medium truncate">
+                  {currentUser?.role || 'Staff'} • @{currentUser?.username || 'user'}
+                </p>
               </div>
             </div>
-            <button
-              onClick={handleLogout}
-              className="p-1.5 bg-slate-800 hover:bg-red-500/20 hover:text-red-400 text-slate-400 rounded-lg transition shrink-0"
-              title="Sign Out"
+
+            {/* Logout Button */}
+            <div
+              className={`shrink-0 overflow-hidden transition-all duration-300 ease-in-out ${
+                isExpanded ? 'max-w-10 opacity-100' : 'max-w-0 opacity-0 pointer-events-none'
+              }`}
             >
-              <LogOut className="w-4 h-4" />
-            </button>
+              <button
+                onClick={handleLogout}
+                className="p-1.5 bg-slate-800 hover:bg-red-500/20 hover:text-red-400 text-slate-400 rounded-lg transition shrink-0"
+                title="Sign Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </aside>
