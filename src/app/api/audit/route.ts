@@ -1,10 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import { AuditLogModel } from '@/lib/models/AuditLog';
+import { verifySessionAndRole } from '@/lib/auth';
+import { getNextSequenceValue } from '@/lib/models/Counter';
 
-// GET: Fetch audit logs from database
-export async function GET() {
+// GET: Fetch audit logs from database (Admin, Manager, Accountant)
+export async function GET(req: NextRequest) {
   try {
+    const auth = await verifySessionAndRole(req, ['Admin', 'Manager', 'Accountant']);
+    if (auth.errorResponse) return auth.errorResponse;
+
     await connectToDatabase();
     const docs = await AuditLogModel.find().sort({ createdAt: -1 }).limit(100).lean();
 
@@ -26,9 +31,12 @@ export async function GET() {
   }
 }
 
-// POST: Log an audit event in database
-export async function POST(req: Request) {
+// POST: Log an audit event in database (Any authenticated user)
+export async function POST(req: NextRequest) {
   try {
+    const auth = await verifySessionAndRole(req);
+    if (auth.errorResponse) return auth.errorResponse;
+
     await connectToDatabase();
     const body = await req.json();
 
@@ -41,8 +49,10 @@ export async function POST(req: Request) {
       );
     }
 
+    // Determine next audit log ID atomically
     const lastLog = await AuditLogModel.findOne().sort({ idNumber: -1 }).lean();
-    const nextId = lastLog && lastLog.idNumber ? lastLog.idNumber + 1 : 1;
+    const fallbackMaxId = lastLog && lastLog.idNumber ? lastLog.idNumber + 1 : 1;
+    const nextId = await getNextSequenceValue('auditLogId', fallbackMaxId);
 
     const log = await AuditLogModel.create({
       idNumber: nextId,

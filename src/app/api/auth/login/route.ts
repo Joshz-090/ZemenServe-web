@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { connectToDatabase } from '@/lib/db';
 import { UserModel } from '@/lib/models/User';
+import { createSignedSessionToken } from '@/lib/auth';
 
 export async function POST(req: Request) {
   try {
@@ -70,16 +71,24 @@ export async function POST(req: Request) {
       role: user.role,
     };
 
+    const token = createSignedSessionToken({
+      id: user._id.toString(),
+      username: user.username,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
+
     const response = NextResponse.json({
       success: true,
       user: userData,
       message: 'Login successful',
     });
 
-    // Set secure authentication cookie
+    // Set secure, cryptographically signed authentication cookie
     response.cookies.set({
       name: 'zemen_auth_session',
-      value: JSON.stringify(userData),
+      value: token,
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

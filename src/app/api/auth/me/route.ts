@@ -1,29 +1,14 @@
-import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { connectToDatabase } from '@/lib/db';
-import { UserModel } from '@/lib/models/User';
+import { NextResponse, NextRequest } from 'next/server';
+import { verifySessionAndRole } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get('zemen_auth_session');
-
-    if (!sessionCookie || !sessionCookie.value) {
-      return NextResponse.json({ success: false, user: null }, { status: 401 });
+    const auth = await verifySessionAndRole(req);
+    if (auth.errorResponse) {
+      return auth.errorResponse;
     }
 
-    const sessionData = JSON.parse(sessionCookie.value);
-
-    // Verify user still exists and is active in database
-    await connectToDatabase();
-    const user = await UserModel.findById(sessionData.id);
-
-    if (!user || !user.isActive) {
-      const response = NextResponse.json({ success: false, user: null }, { status: 401 });
-      response.cookies.delete('zemen_auth_session');
-      return response;
-    }
-
+    const user = auth.userDoc!;
     return NextResponse.json({
       success: true,
       user: {

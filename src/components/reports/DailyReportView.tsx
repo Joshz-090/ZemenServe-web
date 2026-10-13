@@ -1,7 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { store } from '@/lib/store';
 import { DailyReportSummary } from '@/lib/types';
-import { BarChart3, TrendingUp, DollarSign, ShoppingBag, Printer, FileSpreadsheet, PieChart, ShieldCheck, Calendar } from 'lucide-react';
+import {
+  BarChart3,
+  TrendingUp,
+  DollarSign,
+  ShoppingBag,
+  Printer,
+  FileSpreadsheet,
+  PieChart,
+  ShieldCheck,
+  Calendar,
+  Bed,
+  UtensilsCrossed,
+  Users,
+  CheckCircle,
+} from 'lucide-react';
 
 interface DailyReportViewProps {
   userRole?: string;
@@ -165,94 +179,207 @@ export function DailyReportView({ userRole }: DailyReportViewProps) {
       </div>
 
       {/* Financial KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Revenue */}
-        <div className="p-5 rounded-2xl bg-slate-950/70 border border-amber-500/30 relative overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+        {/* Total Grand Revenue */}
+        <div className="p-4 rounded-2xl bg-slate-950/80 border border-amber-500/40 relative overflow-hidden">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Total Revenue</p>
-              <h2 className="text-2xl font-black text-amber-400 mt-1">
-                {summary.totalRevenue.toFixed(2)} <span className="text-xs font-normal text-slate-400">ETB</span>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Total Revenue</p>
+              <h2 className="text-xl font-black text-amber-400 mt-1">
+                {summary.totalRevenue.toFixed(2)} <span className="text-[10px] font-normal text-slate-400">ETB</span>
               </h2>
             </div>
             <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
-              <DollarSign className="w-5 h-5" />
+              <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-[11px] text-slate-500 mt-3">{summary.totalOrders} total completed orders</p>
+          <p className="text-[10px] text-slate-500 mt-2">Lodging + Food & Bev + Others</p>
         </div>
 
-        {/* Cost of Goods Sold (COGS) */}
-        <div className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 relative overflow-hidden">
+        {/* Room Lodging Revenue */}
+        <div className="p-4 rounded-2xl bg-slate-950/80 border border-indigo-500/30 relative overflow-hidden">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Cost of Goods Sold (COGS)</p>
-              <h2 className="text-2xl font-black text-rose-400 mt-1">
-                {summary.totalCogs.toFixed(2)} <span className="text-xs font-normal text-slate-400">ETB</span>
+              <p className="text-[10px] font-bold text-indigo-300 uppercase tracking-wide">Room Revenue</p>
+              <h2 className="text-xl font-black text-indigo-400 mt-1">
+                {(summary.roomRevenue || 0).toFixed(2)} <span className="text-[10px] font-normal text-slate-400">ETB</span>
               </h2>
             </div>
-            <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400">
-              <ShoppingBag className="w-5 h-5" />
+            <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400">
+              <Bed className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-[11px] text-slate-500 mt-3">Raw ingredient recipe cost consumed</p>
+          <p className="text-[10px] text-slate-500 mt-2">{summary.totalLodgingBookings || 0} room booking(s) active</p>
         </div>
 
-        {/* Net Profit */}
-        <div className="p-5 rounded-2xl bg-slate-950/70 border border-emerald-500/30 relative overflow-hidden">
+        {/* Food & Beverage Revenue */}
+        <div className="p-4 rounded-2xl bg-slate-950/80 border border-emerald-500/30 relative overflow-hidden">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Net Profit</p>
-              <h2 className="text-2xl font-black text-emerald-400 mt-1">
-                {summary.netProfit.toFixed(2)} <span className="text-xs font-normal text-slate-400">ETB</span>
+              <p className="text-[10px] font-bold text-emerald-300 uppercase tracking-wide">Food & Bev (POS)</p>
+              <h2 className="text-xl font-black text-emerald-400 mt-1">
+                {(summary.foodRevenue || 0).toFixed(2)} <span className="text-[10px] font-normal text-slate-400">ETB</span>
               </h2>
             </div>
             <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
-              <TrendingUp className="w-5 h-5" />
+              <UtensilsCrossed className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-[11px] text-slate-500 mt-3">Net Profit = Revenue - COGS</p>
+          <p className="text-[10px] text-slate-500 mt-2">{summary.totalOrders} paid restaurant order(s)</p>
         </div>
 
-        {/* Gross Margin % */}
-        <div className="p-5 rounded-2xl bg-slate-950/70 border border-sky-500/30 relative overflow-hidden">
+        {/* Cost of Goods Sold (COGS) */}
+        <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 relative overflow-hidden">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Gross Margin</p>
-              <h2 className="text-2xl font-black text-sky-400 mt-1">{grossMargin.toFixed(1)}%</h2>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Total COGS</p>
+              <h2 className="text-xl font-black text-rose-400 mt-1">
+                {summary.totalCogs.toFixed(2)} <span className="text-[10px] font-normal text-slate-400">ETB</span>
+              </h2>
             </div>
-            <div className="p-2 rounded-xl bg-sky-500/20 text-sky-400">
-              <PieChart className="w-5 h-5" />
+            <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400">
+              <ShoppingBag className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-[11px] text-slate-500 mt-3">Average Profit Margin Percentage</p>
+          <p className="text-[10px] text-slate-500 mt-2">Recipe ingredient costs</p>
+        </div>
+
+        {/* Net Profit */}
+        <div className="p-4 rounded-2xl bg-slate-950/80 border border-emerald-500/40 relative overflow-hidden">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Net Operating Profit</p>
+              <h2 className="text-xl font-black text-emerald-400 mt-1">
+                {summary.netProfit.toFixed(2)} <span className="text-[10px] font-normal text-slate-400">ETB</span>
+              </h2>
+            </div>
+            <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-[10px] text-slate-500 mt-2">Margin: {grossMargin.toFixed(1)}%</p>
         </div>
       </div>
 
-      {/* Item-by-Item Sales Breakdown */}
+      {/* SECTION 1: Room Lodging Sales & Occupancy Breakdown */}
       <div className="space-y-3">
-        <h3 className="text-base font-black text-slate-100 flex items-center gap-2">
-          <FileSpreadsheet className="w-4 h-4 text-amber-400" /> ITEM SALES & PROFIT BREAKDOWN
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-black text-slate-100 flex items-center gap-2">
+            <Bed className="w-4 h-4 text-indigo-400" />
+            ROOM LODGING SALES & OCCUPANCY BREAKDOWN
+          </h3>
+          <span className="text-xs text-slate-400 font-semibold">
+            Total Room Lodging: <strong className="text-indigo-300">{(summary.roomRevenue || 0).toLocaleString()} ETB</strong>
+          </span>
+        </div>
 
         <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/50">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-900 text-slate-400 uppercase font-semibold border-b border-slate-800">
               <tr>
-                <th className="py-3.5 px-4">Menu Dish</th>
-                <th className="py-3.5 px-4">Category</th>
-                <th className="py-3.5 px-4 text-center">Qty Sold</th>
-                <th className="py-3.5 px-4 text-right">Total Revenue</th>
-                <th className="py-3.5 px-4 text-right">Ingredient Cost</th>
-                <th className="py-3.5 px-4 text-right">Item Profit</th>
-                <th className="py-3.5 px-4 text-right">Margin %</th>
+                <th className="py-3 px-3.5">Room</th>
+                <th className="py-3 px-3.5">Room Type</th>
+                <th className="py-3 px-3.5">Guest Full Name</th>
+                <th className="py-3 px-3.5">National ID / FIN #</th>
+                <th className="py-3 px-3.5">Check-In / Out</th>
+                <th className="py-3 px-3.5 text-center">Nights</th>
+                <th className="py-3 px-3.5 text-right">Nightly Rate</th>
+                <th className="py-3 px-3.5 text-right">Total Lodging</th>
+                <th className="py-3 px-3.5 text-right">Deposit</th>
+                <th className="py-3 px-3.5 text-right">Balance Due</th>
+                <th className="py-3 px-3.5 text-center">Meal Plan</th>
+                <th className="py-3 px-3.5 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60 text-slate-200">
+              {!summary.roomSales || summary.roomSales.length === 0 ? (
+                <tr>
+                  <td colSpan={12} className="py-8 text-center text-slate-500">
+                    No room lodging bookings or occupancies registered for this report date.
+                  </td>
+                </tr>
+              ) : (
+                summary.roomSales.map((sale, idx) => (
+                  <tr key={`${sale.reservationId}-${idx}`} className="hover:bg-slate-900/40">
+                    <td className="py-3 px-3.5 font-black text-amber-400">#{sale.roomNumber}</td>
+                    <td className="py-3 px-3.5 font-bold text-slate-300">{sale.roomType}</td>
+                    <td className="py-3 px-3.5 font-bold text-slate-100">
+                      <div>{sale.guestName}</div>
+                      {sale.guestPhone && <div className="text-[10px] text-slate-400 font-normal">{sale.guestPhone}</div>}
+                    </td>
+                    <td className="py-3 px-3.5 font-mono text-[11px] text-amber-300">
+                      <div>{sale.idNumber || 'N/A'}</div>
+                      <div className="text-[9px] text-slate-500">{sale.idType || 'Fayda ID'}</div>
+                    </td>
+                    <td className="py-3 px-3.5 text-[11px] text-slate-300">
+                      <div>In: {sale.checkInDate}</div>
+                      <div>Out: {sale.checkOutDate}</div>
+                    </td>
+                    <td className="py-3 px-3.5 text-center font-bold text-indigo-400">{sale.nights}</td>
+                    <td className="py-3 px-3.5 text-right font-medium">{sale.rate.toLocaleString()} ETB</td>
+                    <td className="py-3 px-3.5 text-right font-black text-amber-400">
+                      {sale.total.toLocaleString()} ETB
+                    </td>
+                    <td className="py-3 px-3.5 text-right font-semibold text-emerald-400">
+                      {(sale.depositPaid || 0).toLocaleString()} ETB
+                    </td>
+                    <td className="py-3 px-3.5 text-right font-bold text-rose-400">
+                      {(sale.balanceDue || 0).toLocaleString()} ETB
+                    </td>
+                    <td className="py-3 px-3.5 text-center">
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                        {sale.mealPlan || 'Room Only'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3.5 text-center">
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
+                        sale.status === 'Checked-In'
+                          ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                          : sale.status === 'Checked-Out'
+                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                          : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                      }`}>
+                        {sale.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* SECTION 2: Food & Beverage (POS) Sales Breakdown */}
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-black text-slate-100 flex items-center gap-2">
+            <UtensilsCrossed className="w-4 h-4 text-emerald-400" />
+            FOOD & BEVERAGE SALES & PROFIT BREAKDOWN
+          </h3>
+          <span className="text-xs text-slate-400 font-semibold">
+            Total F&B: <strong className="text-emerald-300">{(summary.foodRevenue || 0).toLocaleString()} ETB</strong>
+          </span>
+        </div>
+
+        <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/50">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-900 text-slate-400 uppercase font-semibold border-b border-slate-800">
+              <tr>
+                <th className="py-3 px-4">Menu Dish</th>
+                <th className="py-3 px-4">Category</th>
+                <th className="py-3 px-4 text-center">Qty Sold</th>
+                <th className="py-3 px-4 text-right">Total Revenue</th>
+                <th className="py-3 px-4 text-right">Ingredient Cost</th>
+                <th className="py-3 px-4 text-right">Item Profit</th>
+                <th className="py-3 px-4 text-right">Margin %</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 text-slate-200">
               {summary.itemsSold.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-slate-500">
-                    No items sold yet today.
+                    No restaurant or bar items sold on this report date.
                   </td>
                 </tr>
               ) : (
@@ -262,7 +389,7 @@ export function DailyReportView({ userRole }: DailyReportViewProps) {
                     <tr key={item.menuItemId} className="hover:bg-slate-900/40">
                       <td className="py-3.5 px-4 font-bold text-slate-100">{item.name}</td>
                       <td className="py-3.5 px-4 text-slate-400">{item.category}</td>
-                      <td className="py-3.5 px-4 text-center font-bold text-amber-400">{item.quantity}</td>
+                      <td className="py-3.5 px-4 text-center font-bold text-emerald-400">{item.quantity}</td>
                       <td className="py-3.5 px-4 text-right font-semibold">{item.revenue.toFixed(2)} ETB</td>
                       <td className="py-3.5 px-4 text-right text-rose-400">{item.cost.toFixed(2)} ETB</td>
                       <td className="py-3.5 px-4 text-right font-black text-emerald-400">

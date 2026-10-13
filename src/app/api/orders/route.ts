@@ -1,12 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import { OrderModel } from '@/lib/models/Order';
+import { verifySessionAndRole } from '@/lib/auth';
+import { getNextSequenceValue } from '@/lib/models/Counter';
 
 export const dynamic = 'force-dynamic';
 
-// GET: Fetch all orders from database
-export async function GET() {
+// GET: Fetch all orders from database (Admin, Manager, Cashier, Chef, Waiter, Accountant)
+export async function GET(req: NextRequest) {
   try {
+    const auth = await verifySessionAndRole(req, ['Admin', 'Manager', 'Cashier', 'Chef', 'Waiter', 'Accountant']);
+    if (auth.errorResponse) return auth.errorResponse;
+
     await connectToDatabase();
     const docs = await OrderModel.find().sort({ idNumber: -1 }).limit(200).lean();
 
@@ -41,9 +46,12 @@ export async function GET() {
   }
 }
 
-// POST: Create a new order in database
-export async function POST(req: Request) {
+// POST: Create a new order in database (Admin, Manager, Cashier, Waiter)
+export async function POST(req: NextRequest) {
   try {
+    const auth = await verifySessionAndRole(req, ['Admin', 'Manager', 'Cashier', 'Waiter']);
+    if (auth.errorResponse) return auth.errorResponse;
+
     await connectToDatabase();
     const body = await req.json();
 
@@ -56,9 +64,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Determine next order ID atomically
+    // Determine next order ID atomically using MongoDB atomic counter
     const lastOrder = await OrderModel.findOne().sort({ idNumber: -1 }).lean();
-    const nextOrderId = lastOrder && lastOrder.idNumber ? lastOrder.idNumber + 1 : 1;
+    const highestExistingId = lastOrder && lastOrder.idNumber ? lastOrder.idNumber + 1 : 1;
+    const nextOrderId = await getNextSequenceValue('orderId', highestExistingId);
 
     const orderItems = cartItems.map((item: any, idx: number) => ({
       idNumber: idx + 1,
@@ -110,9 +119,12 @@ export async function POST(req: Request) {
   }
 }
 
-// PUT: Update order status (Pending -> Preparing -> Ready -> Served -> Cancelled) or order items
-export async function PUT(req: Request) {
+// PUT: Update order status or order items (Admin, Manager, Cashier, Chef, Waiter)
+export async function PUT(req: NextRequest) {
   try {
+    const auth = await verifySessionAndRole(req, ['Admin', 'Manager', 'Cashier', 'Chef', 'Waiter']);
+    if (auth.errorResponse) return auth.errorResponse;
+
     await connectToDatabase();
     const body = await req.json();
     const { orderId, status, isPaid, paymentMethod, cancelReason, orderItems, totalAmount } = body;
