@@ -7,6 +7,7 @@ import { DailyReportModel } from '@/lib/models/DailyReport';
 import { verifySessionAndRole } from '@/lib/auth';
 import { getNextSequenceValue } from '@/lib/models/Counter';
 import { isDateRangeOverlapping, getEthiopianLocalDate } from '@/lib/dateUtils';
+import { AccountingIntegrationService } from '@/lib/accounting/integration.service';
 
 const INITIAL_RESERVATIONS = [
   { idNumber: 101, bookingRef: 'RES-8491', guestId: 1, guestName: 'Dawit Yohannes', guestPhone: '+251 911 223 344', idPassportNumber: 'ETH-849204', idType: 'National ID (Fayda / FIN)', roomId: 1, roomNumber: '101', roomType: 'Standard Single', checkInDate: '2026-10-08', checkOutDate: '2026-10-11', nights: 3, numberOfGuests: 1, status: 'Checked-In', bookingSource: 'Direct Walk-in', nightlyRate: 2500, totalAmount: 7500, depositPaid: 2500, paymentStatus: 'Partial' },
@@ -331,6 +332,34 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Automated Accounting Integration: Post Guest Deposit & Room Stay Journals
+    try {
+      const actorName = auth.userDoc?.name || auth.session?.username || 'Receptionist';
+      if (newRes.depositPaid > 0) {
+        await AccountingIntegrationService.postGuestDepositJournal({
+          reservationId: newRes.idNumber,
+          bookingRef: newRes.bookingRef,
+          guestName: newRes.guestName,
+          depositAmount: newRes.depositPaid,
+          paymentMethod: 'Cash',
+          postedBy: actorName,
+        });
+      }
+
+      if (newRes.status === 'Checked-In' || checkInDate === todayStr) {
+        await AccountingIntegrationService.postRoomNightAuditJournal({
+          reservationId: newRes.idNumber,
+          bookingRef: newRes.bookingRef,
+          roomNumber: newRes.roomNumber,
+          guestName: newRes.guestName,
+          nightlyRate: newRes.nightlyRate,
+          postedBy: actorName,
+        });
+      }
+    } catch (acctErr: any) {
+      console.warn('Reservation Accounting Journal notice:', acctErr.message);
+    }
+
     return NextResponse.json({
       success: true,
       reservation: {
@@ -449,6 +478,26 @@ export async function PUT(req: NextRequest) {
           },
         }
       );
+
+      // Automated Accounting Integration: Post Checkout Settlement Journal
+      try {
+        const actorName = auth.userDoc?.name || auth.session?.username || 'Receptionist';
+        const depositUsed = reservation.depositPaid || 0;
+        const balancePaid = Math.max(0, reservation.totalAmount - depositUsed);
+        await AccountingIntegrationService.postGuestCheckoutSettlementJournal({
+          reservationId: reservation.idNumber,
+          bookingRef: reservation.bookingRef,
+          roomNumber: reservation.roomNumber,
+          guestName: reservation.guestName,
+          totalBilled: reservation.totalAmount,
+          depositUsed,
+          balancePaid,
+          paymentMethod: 'Cash',
+          postedBy: actorName,
+        });
+      } catch (acctErr: any) {
+        console.warn('Checkout Settlement Journal notice:', acctErr.message);
+      }
     } else if (status === 'Cancelled') {
       await RoomModel.updateOne(
         { idNumber: reservation.roomId, currentReservationId: reservation.idNumber },

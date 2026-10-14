@@ -296,8 +296,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           router.replace('/reception');
         }
       } else if (role === 'Accountant') {
-        const allowed = ['/finance', '/daily-report', '/reports', '/orders'];
-        if (!allowed.includes(pathname)) {
+        const allowed = ['/daily-report', '/reports', '/orders'];
+        if (!pathname.startsWith('/finance') && !allowed.includes(pathname)) {
           router.replace('/finance');
         }
       } else if (role === 'Cashier') {
@@ -359,6 +359,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const isCurrent = (path: string) => {
     if (path === '/daily-report' || path === '/reports') {
       return pathname === '/daily-report' || pathname === '/reports';
+    }
+    if (path === '/finance') {
+      return pathname.startsWith('/finance');
     }
     return pathname === path;
   };
