@@ -20,6 +20,8 @@ export interface IOrder extends Document {
   isPaid: boolean;
   paymentMethod?: string;
   cancelReason?: string;
+  roomNumber?: string;
+  guestName?: string;
   orderItems: IOrderItem[];
   updatedAt: Date;
 }
@@ -50,6 +52,8 @@ const OrderSchema: Schema = new Schema(
     isPaid: { type: Boolean, required: true, default: false, index: true },
     paymentMethod: { type: String },
     cancelReason: { type: String },
+    roomNumber: { type: String },
+    guestName: { type: String },
     orderItems: [OrderItemSchema],
   },
   {

@@ -7,6 +7,7 @@ import { DailyReportModel } from '@/lib/models/DailyReport';
 import { verifySessionAndRole } from '@/lib/auth';
 import { getNextSequenceValue } from '@/lib/models/Counter';
 import { getEthiopianLocalDate } from '@/lib/dateUtils';
+import { AccountingIntegrationService } from '@/lib/accounting/integration.service';
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     await connectToDatabase();
     const body = await req.json();
-    const { orderId, paymentMethod, totalAmount, items } = body;
+    const { orderId, paymentMethod, totalAmount, items, roomNumber, guestName } = body;
 
     if (!orderId || !Array.isArray(items)) {
       return NextResponse.json({ success: false, error: 'Invalid order payload' }, { status: 400 });
@@ -157,6 +158,24 @@ export async function POST(req: NextRequest) {
       }
 
       await dailyReport.save();
+    }
+
+    // 5. Automated Accounting Integration: Post Double-Entry Revenue & COGS Journals
+    let accountingNotice: string | undefined;
+    try {
+      await AccountingIntegrationService.postPOSOrderJournals({
+        orderId: Number(orderId),
+        totalAmount: orderRevenue,
+        cogsAmount: calculatedTotalCogs,
+        paymentMethod: paymentMethod || 'Cash',
+        isRoomCharge: paymentMethod === 'Room Charge',
+        roomNumber: roomNumber || (targetOrder as any).roomNumber,
+        guestName: guestName || (targetOrder as any).guestName,
+        postedBy: auth.userDoc?.name || auth.session?.username || 'Cashier',
+      });
+    } catch (acctErr: any) {
+      console.warn('POS Accounting Journal notice:', acctErr.message);
+      accountingNotice = acctErr.message;
     }
 
     return NextResponse.json({
